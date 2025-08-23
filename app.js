@@ -29,6 +29,10 @@ function globalClickHandler(e) {
     // Don't advance dialogue if clicked anywhere inside a choice button
     if (e.target.closest('.choiceBtn')) return;
     addDialogue();
+
+    if(showChoices){
+        // gameScreen.scrollTo({ top: gameScreen.scrollHeight, behavior: 'smooth' });
+    }
 }
 
 // Init game only once
@@ -37,10 +41,10 @@ function initGame() {
     document.body.removeEventListener("click", globalClickHandler);
     document.body.addEventListener("click", globalClickHandler);
 
-    renderScene();
-    addDialogue();
 }
 
+// Call initGame once on startup
+initGame();
 
 
 
@@ -75,6 +79,8 @@ let dialogue = [];
 let choicesShown = false;
 let suppressClickSound = false;
 
+let actions = [];
+
 function renderScene(){
     const scene = scenes[currentScene];
     currentDialogue = 0;
@@ -102,7 +108,31 @@ function addDialogue(){
         gameScreen.appendChild(dialogueContainer);
 
         if (line.color) {
-            dialogueContainer.style.color = line.color;
+            element.style.color = line.color;
+        }
+
+        // Handle any actions/outcomes attached to this line
+        if (line.outcome) {
+            line.outcome.forEach(item => {
+                if (item.text) {
+                    // Optionally, display additional info text
+                    const infoEl = document.createElement('div');
+                    infoEl.classList.add('infoText');
+                    const element = document.createElement('h2');
+                    element.textContent = item.text;
+                    infoEl.appendChild(element)
+                    gameScreen.appendChild(infoEl);
+                    setTimeout(() => {
+                        infoEl.classList.add('show');
+                        infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 300);
+                }
+                if (item.action) {
+                    // Add the action to global actions array
+                    actions.push(item.action);
+                    console.log(actions);
+                }
+            });
         }
 
         setTimeout(() => {
@@ -124,13 +154,13 @@ function addDialogue(){
             showChoices(scenes[currentScene].choices);
             playSound(choiceSound);
         } else if (scene.timedchoices) {
-            showTimedChoices(scene.timedchoices, 3000);
+            showTimedChoices(scene.timedchoices, 6000);
             playSound(choiceSound);
     }
     }
 }
 
-function showTimedChoices(choices, timeLimit = 3000) {
+function showTimedChoices(choices, timeLimit = 6000) {
     const choicesContainer = document.createElement('div');
     choicesContainer.classList.add('choicesContainer');
 
@@ -149,7 +179,7 @@ function showTimedChoices(choices, timeLimit = 3000) {
 
             const textSpan = document.createElement('span');
             textSpan.textContent = " " + match[2];
-            textSpan.style.color = chapterColor;
+            textSpan.style.color = choiceBtnColor;
 
             btn.appendChild(indexSpan);
             btn.appendChild(textSpan);
@@ -159,7 +189,7 @@ function showTimedChoices(choices, timeLimit = 3000) {
 
         setTimeout(() => btn.classList.add('show'));
 
-        btn.onclick = (e) => {
+        btn.onclick = () => {
             
             if (picked) return;
             picked = true;
@@ -185,9 +215,12 @@ function showTimedChoices(choices, timeLimit = 3000) {
     const timerFill = document.createElement('div');
     timerFill.classList.add('timerFill');
     timerBar.appendChild(timerFill);
-    choicesContainer.appendChild(timerBar);
-
     gameScreen.appendChild(choicesContainer);
+    gameScreen.appendChild(timerBar);
+
+    setTimeout(() => {
+            timerBar.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 50);
 
     // Animate bar
     setTimeout(() => {
@@ -246,7 +279,7 @@ function showChoices(choices) {
 
             const textSpan = document.createElement('span');
             textSpan.textContent = " " + match[2];
-            textSpan.style.color = chapterColor;   
+            textSpan.style.color = choiceBtnColor;   
 
             btn.appendChild(indexSpan);
             btn.appendChild(textSpan);
@@ -260,8 +293,7 @@ function showChoices(choices) {
             choicesContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
         });
 
-        btn.onclick = (e) => {
-          
+        btn.onclick = () => {
             suppressClickSound = true;
             playSound(choiceConfirm);
 
@@ -278,6 +310,7 @@ function showChoices(choices) {
 
             currentScene = choice.next;
             renderScene();
+            addDialogue();
         };
 
         choicesContainer.appendChild(btn);
@@ -292,11 +325,13 @@ function showChoices(choices) {
 
 
 const chapterColor = '#ca4646ff';
+const choiceColor = '#caa046ff';
+const choiceBtnColor = '#e7e7e7ff'
 
 const scenes = {
     intro: {
         text: [
-            // {text: `Chapter 1: Introduction`, color:`${chapterColor}`},
+            {text: `Chapter 1: Introduction`, color:`${chapterColor}`},
             // {text: `Anna: “Thanks for doing this, Jason… you know it means a lot to me.”`},
             // {text: `Jason shrugged, lips twitching. “You don’t have to mention it. It’s the least I can do.”`},
             // {text: `A playful glint danced in Anna’s eyes as she stepped closer. “Then I’ll make sure to repay you… in the way you like best.”`},
@@ -317,27 +352,31 @@ const scenes = {
             // {text: `Jason knelt and scratched behind Spike’s ears. “You’re the best little guy. Always look out for us.”`},
             // {text: `The sea seemed unnaturally calm… no waves, just bleak, silent blackness stretching to the horizon.`},
             // {text: `Spike’s teeth snagged Jason’s pants, a feeble attempt to hold on that slipped almost immediately.`},
-            // {text: `Spike shivered suddenly, ears flattening. Then he convulsed violently, a guttural, unnatural growl escaping him. He began biting himself.`},
-            // {text: `Max froze. “yo yo… does this look like sea sickness to anyone?”`},
-            // {text: `Anna stepped closer, hand trembling. “Spike… what’s happening?”`},
-            // {text: `Jason: “Step back! Let me handle him!”`},
-            // {text: `Jason: “What’s happening to him? He’s acting… aggressively! Someone bring me water!”`},
-            // {text: `Without warning, Spike leapt at Jason, jaws clamping down on his neck.`},
-            // {text: `Anna screamed. “Oh no! Someone help him!”`},
-            // {text: `Matthew lunged forward. “What even is happening?”`},
-            // {text: `He tried to pull Spike off Jason, but the dog’s jaws clenched harder, almost impossibly strong.`},
-            // {text: `Anna’s voice shook. “Oh please… no, Jason!”`},
+            {text: `Spike shivered suddenly, ears flattening. Then he convulsed violently, a guttural, unnatural growl escaping him. He began biting himself.`},
+            {text: `Max froze. “yo yo… does this look like sea sickness to anyone?”`},
+            {text: `Anna stepped closer, hand trembling. “Spike… what’s happening?”`},
+            {text: `Jason: “Step back! Let me handle him!”`},
+            {text: `Jason: “What’s happening to him? He’s acting… aggressively! Someone bring me water!”`},
+            {text: `Without warning, Spike leapt at Jason, jaws clamping down on his neck.`},
+            {text: `Anna screamed. “Oh no! Someone help him!”`},
+            {text: `Matthew lunged forward. “What even is happening?”`},
+            {text: `He tried to pull Spike off Jason, but the dog’s jaws clenched harder, almost impossibly strong.`},
+            {text: `Anna’s voice shook. “Oh please… no, Jason!”`},
             {text: `Jason felt the world tilt and blur. Pain, fear, and a strangled sense of helplessness consumed him. Voices echoed around him—distant, muffled—but one voice pierced through clearly:`},
             {text: `"Jason… Jason… Please stay with me… You promised."`},
         ],
-         timedchoices: [
+        timedchoices: [
             { text: "1. Give Up", next: "give_up" },
             { text: "2. Fight back", next: "fight_back" }
         ]
     },
     give_up: {
         text: [
-            {text: `The will to fight back flares, stubborn and fierce.`},
+            {text: `The will to fight back flares, stubborn and fierce.`, color:`${choiceColor}`, 
+            outcome: [
+                // {text : `ⓘ`},
+                {action: `jason_fought_back`}
+            ]},
             {text: `A bright light rises on the horizon, growing sharper and blinding with every second. Jason closed his eyes, struggling to hold on.`},
             {text: `When he opened them again, Anna is kneeling beside him, tears streaking her face.`},
             {text: `Anna: "Thank God… you’re back."`},
@@ -352,7 +391,10 @@ const scenes = {
     },
     fight_back: {
         text: [
-            {text: `The will to go on feels… extinguished.`},
+            {text: `The will to go on feels… extinguished.`, color:`${choiceColor}`,
+            outcome: [
+                {action: `jason_gave_up`}
+            ]},
             {text: `A bright light rises on the horizon, growing sharper and blinding with every second. he closed his eyes, struggling to hold on.`},
             {text: `When he open them again, Anna is kneeling beside him, tears streaking her face.`},
             {text: `Anna: "Thank God… you’re alive."`},
@@ -378,5 +420,5 @@ const scenes = {
     },
 }
 
-// Call initGame once on startup
-initGame();
+renderScene();
+addDialogue();

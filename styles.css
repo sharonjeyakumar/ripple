@@ -135,6 +135,16 @@ p{
     opacity: 1;
 }
 
+.infoText{
+    /* border: 1px solid white; */
+    padding-bottom: 15px;
+    font-weight: 300;
+    opacity: 0;
+}
+.infoText.show{
+    opacity: 1;
+}
+
 /* Click Effect */
 .click-effect {
     position: absolute;
@@ -188,6 +198,7 @@ p{
   margin-top: 8px;
   overflow: hidden;
   transition: opacity 0.5s ease; /* 👈 smooth fade */
+
 }
 
 .timerFill {
