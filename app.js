@@ -135,6 +135,7 @@ function addDialogue(){
             });
         }
 
+       
         setTimeout(() => {
             element.classList.add('show');
             dialogueContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
@@ -146,19 +147,27 @@ function addDialogue(){
         choicesShown= true;
         const scene = scenes[currentScene];
 
-        if (scene.continue) {
+        if (scene.continue && !scene.end) {
             currentScene = scene.continue[0].next;
             renderScene();
             addDialogue();
         } else if (scene.choices) {
             showChoices(scenes[currentScene].choices);
             playSound(choiceSound);
+            
         } else if (scene.timedchoices) {
             showTimedChoices(scene.timedchoices, 6000);
             playSound(choiceSound);
-    }
+
+        } else if (scene.end){
+             dialogue = scene.end;
+    currentDialogue = 0;
+    choicesShown = true; // prevent showing choices
+    addDialogue(); 
+        }
     }
 }
+
 
 function showTimedChoices(choices, timeLimit = 6000) {
     const choicesContainer = document.createElement('div');
@@ -269,6 +278,16 @@ function showChoices(choices) {
         const btn = document.createElement('button');
         btn.classList.add('choiceBtn');
 
+        //locked choices
+        let isLocked = false;
+        if (choice.requires) {
+            if (Array.isArray(choice.requires)) {
+                isLocked = !choice.requires.every(req => actions.includes(req));
+            } else {
+            isLocked = !actions.includes(choice.requires);
+            }   
+        }
+        
         // Split into index and text (expects "1. Choice text")
         const match = choice.text.match(/^(\d+\.)\s*(.*)$/);
 
@@ -282,47 +301,55 @@ function showChoices(choices) {
             textSpan.style.color = choiceBtnColor;   
 
             btn.appendChild(indexSpan);
-            btn.appendChild(textSpan);
+            if(!isLocked){
+                btn.appendChild(textSpan);
+            }
+            setTimeout(() => {
+                btn.classList.add('show');
+                choicesContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            },0);
+            setTimeout(() => {
+               if (isLocked){
+                const lockSpan = document.createElement('span');
+                lockSpan.textContent = " [...]";
+                lockSpan.style.color = "gray";
+                btn.appendChild(lockSpan);
+                btn.disabled = true;
+            }
+            },5);
+            
         } else {
-            // fallback (if no number prefix)
-            btn.textContent = choice.text;
+            btn.textContent = choice.text + (isLocked ? " [...]" : "");
         }
 
-        setTimeout(() => {
-            btn.classList.add('show');
-            choicesContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        });
 
-        btn.onclick = () => {
+
+        if (!isLocked) {
+            btn.onclick = () => {
             suppressClickSound = true;
             playSound(choiceConfirm);
 
             btn.style.pointerEvents = "none";
             const container = btn.parentElement;
             container.querySelectorAll('.choiceBtn').forEach(b => {
-                if (b !== btn) {
-                    b.style.opacity = '0.5';
-                    b.disabled = true;
-                } else {
-                    b.style.opacity = '1';
-                }
-            });
+            if (b !== btn) {
+                b.style.opacity = '0.5';
+                b.disabled = true;
+            } else {
+                b.style.opacity = '1';
+            }
+        });
 
-            currentScene = choice.next;
-            renderScene();
-            addDialogue();
-        };
+        currentScene = choice.next;
+        renderScene();
+        addDialogue();
+    };
+}
 
         choicesContainer.appendChild(btn);
     });
     gameScreen.appendChild(choicesContainer);
 }
-
-
-// gameScreen.addEventListener('click', () => {
-//     addDialogue();
-// });
-
 
 const chapterColor = '#ca4646ff';
 const choiceColor = '#caa046ff';
@@ -331,91 +358,94 @@ const choiceBtnColor = '#e7e7e7ff'
 const scenes = {
     intro: {
         text: [
-            {text: `Chapter 1: Introduction`, color:`${chapterColor}`},
-            // {text: `Anna: “Thanks for doing this, Jason… you know it means a lot to me.”`},
-            // {text: `Jason shrugged, lips twitching. “You don’t have to mention it. It’s the least I can do.”`},
-            // {text: `A playful glint danced in Anna’s eyes as she stepped closer. “Then I’ll make sure to repay you… in the way you like best.”`},
-            // {text: `Jason glanced at the deck, where the others laughed. “I wish you could do that now… our friends are outside.”`},
-            // {text: `Anna smirked. “You’ll have to wait… it’s always better that way.”`},
-            // {text: `Max’s voice cut sharply across the deck. “yo Jason! What did I tell you? It’s your dog again!”`},
-            // {text: `Anna: “Come on, let’s see.”`},
-            // {text: `Max: “Can’t believe you brought your sick dog on a trip. Hope there’s a vet on this godforsaken island.”`},
-            // {text: `Jason: “He wasn’t sick before. Maybe just sea sickness.”`},
-            // {text: `Linda: “Yeah, he was fine at first… sounds like classic sea sickness to me.”`},
-            // {text: `Anna: “Poor Spike… hang in there, we’ll be there soon.”`},
-            // {text: `Jason: “Matthew, how long until we reach the island?”`},
-            // {text: `Matthew: “By seven.”`},
-            // {text: `Linda: “Can’t you guys choose somewhere nice? It had to be a place from the nightmare?”`},
-            // {text: `Matthew grinned slightly. “Be positive for once.”`},
-            // {text: `Spike trotted toward Jason, tail wagging. He nudged his nose into Jason’s leg, looking up with trusting eyes.`},
-            // {text: `Anna laughed softly. “He clearly likes you a lot… I think I’m getting a little possessive.”`},
-            // {text: `Jason knelt and scratched behind Spike’s ears. “You’re the best little guy. Always look out for us.”`},
-            // {text: `The sea seemed unnaturally calm… no waves, just bleak, silent blackness stretching to the horizon.`},
-            // {text: `Spike’s teeth snagged Jason’s pants, a feeble attempt to hold on that slipped almost immediately.`},
-            {text: `Spike shivered suddenly, ears flattening. Then he convulsed violently, a guttural, unnatural growl escaping him. He began biting himself.`},
-            {text: `Max froze. “yo yo… does this look like sea sickness to anyone?”`},
-            {text: `Anna stepped closer, hand trembling. “Spike… what’s happening?”`},
-            {text: `Jason: “Step back! Let me handle him!”`},
-            {text: `Jason: “What’s happening to him? He’s acting… aggressively! Someone bring me water!”`},
-            {text: `Without warning, Spike leapt at Jason, jaws clamping down on his neck.`},
-            {text: `Anna screamed. “Oh no! Someone help him!”`},
-            {text: `Matthew lunged forward. “What even is happening?”`},
-            {text: `He tried to pull Spike off Jason, but the dog’s jaws clenched harder, almost impossibly strong.`},
-            {text: `Anna’s voice shook. “Oh please… no, Jason!”`},
-            {text: `Jason felt the world tilt and blur. Pain, fear, and a strangled sense of helplessness consumed him. Voices echoed around him—distant, muffled—but one voice pierced through clearly:`},
-            {text: `"Jason… Jason… Please stay with me… You promised."`},
+            {text: `There is a desk in front of you.`},
+            {text: `It is wise to check what is inside that.`},
+            
         ],
         timedchoices: [
-            { text: "1. Give Up", next: "give_up" },
-            { text: "2. Fight back", next: "fight_back" }
+            { text: "1. Open Desk", next: "desk_opened" },
+            { text: "2. Don't Waste Time", next: "desk_unopened" },
+            
         ]
     },
-    give_up: {
+    desk_opened: {
         text: [
-            {text: `The will to fight back flares, stubborn and fierce.`, color:`${choiceColor}`, 
+            {text: `You opened the Desk`, color:`${choiceColor}`, 
             outcome: [
-                // {text : `ⓘ`},
-                {action: `jason_fought_back`}
+                {text : `ⓘ You found a gun`},
+                {action: `desk_opened_gun_found`}
             ]},
-            {text: `A bright light rises on the horizon, growing sharper and blinding with every second. Jason closed his eyes, struggling to hold on.`},
-            {text: `When he opened them again, Anna is kneeling beside him, tears streaking her face.`},
-            {text: `Anna: "Thank God… you’re back."`},
-            {text: `Jason’s chest heaved. His vision was still blurry, the world spinning slightly, but the danger had passed… for now.`},
-        ],
+            {text: `A Revolver`},
+            {text: `There is just a single bullet inside.`},
+            {text: `Hope i don't have to use it.`}
+          ],
         choices: [
 
         ],
         continue: [
-
+            {next: 'confrontation'}
         ]
     },
-    fight_back: {
+    desk_unopened: {
         text: [
-            {text: `The will to go on feels… extinguished.`, color:`${choiceColor}`,
+            {text: `You changed your mind, Maybe its not wise to open the desk,`, color:`${choiceColor}`,
             outcome: [
-                {action: `jason_gave_up`}
+                {action: `desk_remains_closed`}
             ]},
-            {text: `A bright light rises on the horizon, growing sharper and blinding with every second. he closed his eyes, struggling to hold on.`},
-            {text: `When he open them again, Anna is kneeling beside him, tears streaking her face.`},
-            {text: `Anna: "Thank God… you’re alive."`},
-            {text: `Jason’s chest heaved. His vision was still blurry, the world spinning slightly, but the danger had passed… for now.`},
+            {text: `I don't have time to waste checking a desk at this time`},
         ],
         choices: [
-            {text: "1. Its nothing"}
+
         ],
         continue: [
-
+            {next: 'confrontation'}
         ]
     },
-    fight_backs: {
+    confrontation: {
         text: [
-            {text: ``},
+            {text: `You see a guy holding a child at gun point`},
+            {text: `Don't come any near or i will shoot`},
+            {text: `You know i don't have nothing to lose`},
         ],
         choices: [
-
+            { text: "1. Assure", next: "reason_with_enemy" },
+            { text: "2. Request", next: "request_with_enemy" },
+            { text: "3. Shoot Gun", next: "shoot_gun", requires: 'desk_opened_gun_found'},
+            { text: "4. Inimidate With Gun", next: "shoot_gun", requires: ['desk_opened_gun_found','shooting_skills']}
+        ]
+    },
+    reason_with_enemy: {
+        text: [
+            {text: `You don't have to do this.`, color:`${choiceColor}`},
+            {text: `I will make sure you get that money. Leave that girl alone.`},
+            {text: `She is what keeping me alive, I can see through those lying eyes.`},
+            {text: `You try to go near the enemy`},
         ],
-        continue: [
-
+        end: [
+            {text: `He shoots at you. The bullet hits your right temple.`},
+            {text: 'Game Over: Instant Death'}
+        ]
+    },
+    request_with_enemy: {
+        text: [
+            {text: `You see a guy holding a child at gun point`, color:`${choiceColor}`},
+            {text: `Don't come any near or i will shoot`},
+            {text: `You know i don't have nothing to lose`},
+        ],
+        end: [
+            {text: `He shoots at you. The bullet hits at your heart.`},
+            {text: 'Game Over: You collapse on the ground bleeding to death.'}
+        ]
+    },
+    shoot_gun: {
+        text: [
+            {text: `In a Second you aim at his hand and shoot.`, color:`${choiceColor}`},
+            {text: `The bullet hits his hand causing his grip on the gun to lose`},
+            {text: `Now you got nothing to lose and no way to win.`},
+        ],
+        end: [
+            {text:'He surrenders and let go of the girl.'},
+            {text: 'Game Won'}
         ]
     },
 }

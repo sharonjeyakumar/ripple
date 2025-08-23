@@ -83,6 +83,7 @@ p{
 .dialogue {
     opacity: 0;
     transition: all 0.3s ease;
+    /* border: 1px solid white; */
 }
 
 .dialogue.show {
@@ -107,12 +108,12 @@ p{
     width: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: start;
     align-items: start;
     gap: 10px;
     padding-top: 5px;
     padding-bottom: 15px;
-    
+    /* border: 1px solid white; */
 }
 
 .choiceBtn{
@@ -126,7 +127,7 @@ p{
     font-size: 1rem;
     font-weight: 100;
     /* border-radius: 5px; */
-    transition: opacity 0.3s ease;   
+    transition: all 0.3s ease;   
     text-align: start;
     color: #ca4646ff;
 }
@@ -135,11 +136,18 @@ p{
     opacity: 1;
 }
 
+.choiceBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(50%);
+}
 .infoText{
     /* border: 1px solid white; */
-    padding-bottom: 15px;
+    margin-bottom: 15px;
     font-weight: 300;
     opacity: 0;
+    transition: opacity 0.3s ease;
+    /* border: 1px solid white; */
 }
 .infoText.show{
     opacity: 1;
