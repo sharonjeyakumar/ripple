@@ -31,7 +31,7 @@ function globalClickHandler(e) {
     addDialogue();
 
     if(showChoices){
-        // gameScreen.scrollTo({ top: gameScreen.scrollHeight, behavior: 'smooth' });
+        gameScreen.scrollTo({ top: gameScreen.scrollHeight, behavior: 'smooth' });
     }
 }
 
@@ -386,18 +386,6 @@ function showChoices(choices) {
             currentScene = choice.next;
             renderScene();
             addDialogue();
-        //     const container = btn.parentElement;
-        //     container.querySelectorAll('.choiceBtn').forEach(b => {
-        //     if (b !== btn) {
-        //         b.style.opacity = '0.5';
-        //         b.disabled = true;
-        //     } else {
-        //         b.style.opacity = '1';
-        //         if (picked) return;
-        //         // b.disabled = true;
-        //     }
-        // });
-
     };
 }
 
@@ -429,6 +417,20 @@ const scenes = {
                 {action: `desk_opened_gun_found`}
             ]},
             {text: `You changed your mind, Maybe its not wise to open the desk.`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
+            {text: `A Revolver`},
             {text: `A Revolver`},
             {text: `There is just a single bullet inside.`},
             {text: `"Hope i don't have to use it."`}
