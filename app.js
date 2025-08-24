@@ -301,9 +301,12 @@ function lockChoices(selectedBtn) {
         if (b !== selectedBtn) {
             b.style.opacity = '0.5';
             b.disabled = true;
+            b.style.pointerEvents = 'none';
         } else {
             b.style.opacity = '1';
-            b.disabled = true;
+             b.setAttribute('aria-disabled', 'true');
+            b.style.pointerEvents = 'none';
+            b.onclick = null;         
         }
     });
 }
@@ -312,7 +315,7 @@ function lockChoices(selectedBtn) {
 function showChoices(choices) {
     const choicesContainer = document.createElement('div');
     choicesContainer.classList.add('choicesContainer');
-
+    let picked = false;
     choices.forEach(choice => {
         const btn = document.createElement('button');
         btn.classList.add('choiceBtn');
@@ -374,24 +377,27 @@ function showChoices(choices) {
 
         if (!isLocked) {
             btn.onclick = () => {
+        
+            lockChoices(btn);
             suppressClickSound = true;
             playSound(choiceConfirm);
 
             btn.style.pointerEvents = "none";
-            const container = btn.parentElement;
-            lockChoices(btn);
+            currentScene = choice.next;
+            renderScene();
+            addDialogue();
+        //     const container = btn.parentElement;
         //     container.querySelectorAll('.choiceBtn').forEach(b => {
         //     if (b !== btn) {
         //         b.style.opacity = '0.5';
         //         b.disabled = true;
         //     } else {
         //         b.style.opacity = '1';
+        //         if (picked) return;
+        //         // b.disabled = true;
         //     }
         // });
 
-        currentScene = choice.next;
-        renderScene();
-        addDialogue();
     };
 }
 
