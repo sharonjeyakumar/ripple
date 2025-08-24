@@ -220,7 +220,7 @@ function showTimedChoices(choices, timeLimit = 6000) {
                 const unlockSpan = document.createElement('span');
                 unlockSpan.textContent = " [Unlocked]";
                 // unlockSpan.style.color = choiceColor;
-                unlockSpan.style.color = "gray";
+                unlockSpan.style.color = "white";
                 btn.appendChild(unlockSpan);
             }
         } 
