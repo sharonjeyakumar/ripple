@@ -1,53 +1,57 @@
 // Assets Importing
-const fxchoiceSound = "sfx/choicesound.mp3";
+const fxchoiceSound = 'sfx/choicesound.mp3';
 const choiceSound = new Audio(fxchoiceSound);
 
-const fxchoiceConfirm = "sfx/choiceconfirm.mp3";
+const fxchoiceConfirm = 'sfx/choiceconfirm.mp3';
 const choiceConfirm = new Audio(fxchoiceConfirm);
 
 const fxClickSound = `sfx/click-sound3.mp3`;
 const clickSound = new Audio(fxClickSound);
 
+const fxItemFound = `sfx/item-found.mp3`;
+const itemFound = new Audio(fxItemFound);
+
 //Game Screen
 const gameScreen = document.getElementById('gamescreen');
+const dialoguebox = document.getElementById('dialoguebox');
+const gameWrapper = document.getElementById('gameWrapper');
 
 function playSound(sound) {
-  try {
-    sound.pause();         
-    sound.currentTime = 0;
-    sound.play();
-  } catch (err) {
-    console.warn("Sound play failed:", err);
-  }
+    try {
+        sound.pause();
+        sound.currentTime = 0;
+        sound.play();
+    } catch (err) {
+        console.warn('Sound play failed:', err);
+    }
 }
 
 // Global click handler
 function globalClickHandler(e) {
-    
     createClickAnimation(e);
-    if (!e.target.closest('#gamescreen')) return;
+    if (!e.target.closest('#gameWrapper')) return;
     // Don't advance dialogue if clicked anywhere inside a choice button
     if (e.target.closest('.choiceBtn')) return;
     addDialogue();
 
-    if(showChoices){
-        gameScreen.scrollTo({ top: gameScreen.scrollHeight, behavior: 'smooth' });
+    if (showChoices) {
+        dialoguebox.scrollTo({ top: dialoguebox.scrollHeight, behavior: 'smooth' });
     }
 }
 
 // Init game only once
 function initGame() {
     // Ensure listener is not duplicated
-    document.body.removeEventListener("click", globalClickHandler);
-    document.body.addEventListener("click", globalClickHandler);
-
+    if (!gameWrapper) {
+        console.error('❌ gameScreen element not found');
+        return;
+    }
+    document.body.removeEventListener('click', globalClickHandler);
+    document.body.addEventListener('click', globalClickHandler);
 }
 
 // Call initGame once on startup
 initGame();
-
-
-
 
 function createClickAnimation(e) {
     const effect = document.createElement('div');
@@ -69,27 +73,25 @@ function createClickAnimation(e) {
     dot.addEventListener('animationend', () => dot.remove());
 }
 
-
-
 //Game Scene
- 
-let currentScene = "intro";
+
+let currentScene = 'intro';
 let currentDialogue = 0;
 let dialogue = [];
 let choicesShown = false;
 let suppressClickSound = false;
 
 let actions = [];
+let visitedScenes = new Set();
 
-function renderScene(){
+function renderScene() {
     const scene = scenes[currentScene];
     currentDialogue = 0;
     dialogue = scene.text;
     choicesShown = false;
-
 }
 
-function addDialogue(){
+function addDialogue() {
     if (currentDialogue <= dialogue.length - 1) {
         if (!suppressClickSound) {
             playSound(clickSound); // normal dialogue click
@@ -105,7 +107,7 @@ function addDialogue(){
         dialogueContainer.appendChild(element);
         element.classList.add('dialogue');
 
-        gameScreen.appendChild(dialogueContainer);
+        dialoguebox.appendChild(dialogueContainer);
 
         if (line.color) {
             element.style.color = line.color;
@@ -113,38 +115,38 @@ function addDialogue(){
 
         // Handle any actions/outcomes attached to this line
         if (line.outcome) {
-            line.outcome.forEach(item => {
+            line.outcome.forEach((item) => {
                 if (item.text) {
                     // Optionally, display additional info text
                     const infoEl = document.createElement('div');
                     infoEl.classList.add('infoText');
                     const element = document.createElement('h2');
                     element.textContent = item.text;
-                    infoEl.appendChild(element)
-                    gameScreen.appendChild(infoEl);
+                    infoEl.appendChild(element);
+                    dialoguebox.appendChild(infoEl);
                     setTimeout(() => {
+                        playSound(itemFound);
                         infoEl.classList.add('show');
                         infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
                     }, 300);
                 }
                 if (item.action) {
                     // Add the action to global actions array
-                    actions.push(item.action);
+                    // actions.push(item.action);
+                    actions.push(...item.action);
                     console.log(actions);
                 }
             });
         }
 
-       
         setTimeout(() => {
             element.classList.add('show');
             dialogueContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
         }, 50);
 
-        currentDialogue++; 
-
+        currentDialogue++;
     } else if (!choicesShown) {
-        choicesShown= true;
+        choicesShown = true;
         const scene = scenes[currentScene];
 
         if (scene.continue && !scene.end) {
@@ -154,20 +156,17 @@ function addDialogue(){
         } else if (scene.choices) {
             showChoices(scenes[currentScene].choices);
             playSound(choiceSound);
-            
         } else if (scene.timedchoices) {
             showTimedChoices(scene.timedchoices, 6000);
             playSound(choiceSound);
-
-        } else if (scene.end){
-             dialogue = scene.end;
-    currentDialogue = 0;
-    choicesShown = true; // prevent showing choices
-    addDialogue(); 
+        } else if (scene.end) {
+            dialogue = scene.end;
+            currentDialogue = 0;
+            choicesShown = true; // prevent showing choices
+            addDialogue();
         }
     }
 }
-
 
 function showTimedChoices(choices, timeLimit = 6000) {
     const choicesContainer = document.createElement('div');
@@ -177,68 +176,86 @@ function showTimedChoices(choices, timeLimit = 6000) {
     let timeoutId;
 
     choices.forEach((choice, index) => {
-    const btn = document.createElement('button');
-    btn.classList.add('choiceBtn');
+        const btn = document.createElement('button');
+        btn.classList.add('choiceBtn');
 
-    // Check lock condition
-    let isLocked = false;
-    let hadRequires = false;
-    if (choice.requires) {
-        hadRequires = true;
-        if (Array.isArray(choice.requires)) {
-            isLocked = !choice.requires.every(req => actions.includes(req));
-        } else {
-            isLocked = !actions.includes(choice.requires);
+        // Check lock condition
+        let isLocked = false;
+        let hadRequires = false;
+
+        let isCannotVisit = false;
+        let showText = true;
+        if (choice.requires) {
+            hadRequires = true;
+            if (Array.isArray(choice.requires)) {
+                isLocked = !choice.requires.every((req) => actions.includes(req));
+            } else {
+                isLocked = !actions.includes(choice.requires);
+            }
         }
-    }
 
-    // Split "1. Text"
-    const match = choice.text.match(/^(\d+\.)\s*(.*)$/);
-    if (match) {
+        // Check visited array
+        if (choice.visited) {
+            if (Array.isArray(choice.visited)) {
+                isCannotVisit = !choice.visited.every((v) => visitedScenes.has(v));
+            } else {
+                isCannotVisit = !visitedScenes.has(choice.visited);
+            }
+        }
+
         const indexSpan = document.createElement('span');
-        indexSpan.textContent = match[1];
-        indexSpan.style.color = "white";
-
-        const textSpan = document.createElement('span');
-        textSpan.textContent = " " + match[2];
-        textSpan.style.color = choiceBtnColor;
+        indexSpan.textContent = `${index + 1}. `;
+        indexSpan.style.color = 'white';
 
         btn.appendChild(indexSpan);
-        if (!isLocked) {
-            btn.appendChild(textSpan);
-        }
-    } else {
-        btn.textContent = choice.text;
-    }
 
-    setTimeout(() => btn.classList.add('show'));
+        setTimeout(() => btn.classList.add('show'));
 
-    
-    setTimeout(() => {
-        if(!isLocked){
-            if (hadRequires) {
-                const unlockSpan = document.createElement('span');
-                unlockSpan.textContent = " [Unlocked]";
-                // unlockSpan.style.color = choiceColor;
-                unlockSpan.style.color = "white";
-                btn.appendChild(unlockSpan);
+        setTimeout(()=>{
+
+            if (isLocked || isCannotVisit) {
+                const lockSpan = document.createElement('span');
+                lockSpan.textContent = ' [...]';
+                lockSpan.style.color = 'gray';
+                btn.appendChild(lockSpan);
+                btn.disabled = true;
+                showText = false;
             }
-        } 
-        if (isLocked){
-            const lockSpan = document.createElement('span');
-            lockSpan.textContent = " [...]";
-            lockSpan.style.color = "gray";
-            btn.appendChild(lockSpan);
-            btn.disabled = true;
-            } else {
-        // Only attach click handler if not locked
-        btn.onclick = () => {
+    
+           
+            if (!isLocked) {
+                if (showText) {
+                    const textSpan = document.createElement('span');
+                    textSpan.textContent = choice.text;
+                    textSpan.style.color = choiceBtnColor;
+                    btn.appendChild(textSpan);
+    
+                    if (hadRequires) {
+                        const unlockSpan = document.createElement('span');
+                        unlockSpan.textContent = ' [Unlocked]';
+                        // unlockSpan.style.color = choiceColor;
+                        unlockSpan.style.color = 'white';
+                        btn.appendChild(unlockSpan);
+                    }
+                    if (visitedScenes.has(choice.next)) {
+                        const visitedSpan = document.createElement('span');
+                        visitedSpan.textContent = ' [Visited]';
+                        visitedSpan.style.color = 'gray';
+                        btn.appendChild(visitedSpan);
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                    }
+                }
+            }
+        },5)
+        
+         btn.onclick = () => {
             if (picked) return;
             picked = true;
             clearTimeout(timeoutId);
 
-            timerBar.style.display = "none";
-
+            timerBar.style.display = 'none';
+            visitedScenes.add(choice.next);
             suppressClickSound = true;
             playSound(choiceConfirm);
 
@@ -247,153 +264,169 @@ function showTimedChoices(choices, timeLimit = 6000) {
             renderScene();
             addDialogue();
         };
-    }
-        },0);
-     
 
-    choicesContainer.appendChild(btn);
-});
+
+        choicesContainer.appendChild(btn);
+    });
 
     // ⏳ Timer bar
     const timerBar = document.createElement('div');
     timerBar.classList.add('timerBar');
-    timerBar.style.opacity = "0";
+    timerBar.style.opacity = '0';
     const timerFill = document.createElement('div');
     timerFill.classList.add('timerFill');
     timerBar.appendChild(timerFill);
-    gameScreen.appendChild(choicesContainer);
-    gameScreen.appendChild(timerBar);
+    dialoguebox.appendChild(choicesContainer);
+    dialoguebox.appendChild(timerBar);
 
     setTimeout(() => {
-            timerBar.scrollIntoView({ behavior: 'smooth', block: 'end' });
-             timerBar.style.opacity = "1";
-        }, 50);
-   
+        timerBar.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        timerBar.style.opacity = '1';
+    }, 55);
+
     // Animate bar
     setTimeout(() => {
-        timerFill.style.transitionDuration = timeLimit + "ms";
-        timerFill.style.width = "0%";
+        timerFill.style.transitionDuration = timeLimit + 'ms';
+        timerFill.style.width = '0%';
     });
 
     // Auto-pick first choice after timer
     timeoutId = setTimeout(() => {
         if (!picked) {
-        const btns = choicesContainer.querySelectorAll('.choiceBtn');
-         const lastBtn = btns[btns.length - 1];
-        if (lastBtn) {
-            // Instead of lastBtn.click(), call the handler directly
-            lastBtn.onclick({ 
-                // fake event object but won't be used in animation
-                target: lastBtn,
-                // preventDefault: () => {},
-                // stopPropagation: () => {}
-            });
+            const btns = choicesContainer.querySelectorAll('.choiceBtn');
+            const lastBtn = btns[btns.length - 1];
+            if (lastBtn) {
+                // Instead of lastBtn.click(), call the handler directly
+                lastBtn.onclick({
+                    // fake event object but won't be used in animation
+                    target: lastBtn,
+                    // preventDefault: () => {},
+                    // stopPropagation: () => {}
+                });
+            }
         }
-    }
 
-     timerBar.style.display = "none";
+        timerBar.style.display = 'none';
     }, timeLimit);
 }
 
 function lockChoices(selectedBtn) {
     const container = selectedBtn.parentElement;
-    container.querySelectorAll('.choiceBtn').forEach(b => {
+    container.querySelectorAll('.choiceBtn').forEach((b) => {
         if (b !== selectedBtn) {
             b.style.opacity = '0.5';
             b.disabled = true;
             b.style.pointerEvents = 'none';
         } else {
             b.style.opacity = '1';
-             b.setAttribute('aria-disabled', 'true');
+            b.setAttribute('aria-disabled', 'true');
             b.style.pointerEvents = 'none';
-            b.onclick = null;         
+            b.onclick = null;
         }
     });
 }
-
 
 function showChoices(choices) {
     const choicesContainer = document.createElement('div');
     choicesContainer.classList.add('choicesContainer');
     let picked = false;
-    choices.forEach(choice => {
+
+    choices.forEach((choice, index) => {
         const btn = document.createElement('button');
         btn.classList.add('choiceBtn');
-
         //locked choices
         let isLocked = false;
         let hadRequires = false;
+
+        let isCannotVisit = false;
+        let showText = true;
         if (choice.requires) {
             hadRequires = true;
             if (Array.isArray(choice.requires)) {
-                isLocked = !choice.requires.every(req => actions.includes(req));
+                isLocked = !choice.requires.every((req) => actions.includes(req));
             } else {
-            isLocked = !actions.includes(choice.requires);
-            }   
+                isLocked = !actions.includes(choice.requires);
+            }
         }
-        
-        // Split into index and text (expects "1. Choice text")
-        const match = choice.text.match(/^(\d+\.)\s*(.*)$/);
 
-        if (match) {
-            const indexSpan = document.createElement('span');
-            indexSpan.textContent = match[1]; 
-            indexSpan.style.color = "white"; 
+        // Check visited array
+        if (choice.visited) {
+            if (Array.isArray(choice.visited)) {
+                isCannotVisit = !choice.visited.every((v) => visitedScenes.has(v));
+            } else {
+                isCannotVisit = !visitedScenes.has(choice.visited);
+            }
+        }
 
-            const textSpan = document.createElement('span');
-            textSpan.textContent = " " + match[2];
-            textSpan.style.color = choiceBtnColor;   
+        const indexSpan = document.createElement('span');
+        indexSpan.textContent = `${index + 1}. `;
+        indexSpan.style.color = 'white';
 
-            btn.appendChild(indexSpan);
-            if(!isLocked){
+        const textSpan = document.createElement('span');
+        textSpan.textContent = choice.text;
+        textSpan.style.color = choiceBtnColor;
+
+        btn.appendChild(indexSpan);
+
+        setTimeout(() => {
+            btn.classList.add('show');
+            choicesContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        }, 0);
+
+        setTimeout(() => {
+            if (isLocked || isCannotVisit) {
+                const lockSpan = document.createElement('span');
+                lockSpan.textContent = ' [...]';
+                lockSpan.style.color = 'gray';
+                btn.appendChild(lockSpan);
+                btn.disabled = true;
+                showText = false;
+            }
+            
+            if (showText) {
+                const textSpan = document.createElement('span');
+                textSpan.textContent = choice.text;
+                textSpan.style.color = choiceBtnColor;
                 btn.appendChild(textSpan);
+                
                 if (hadRequires) {
                     const unlockSpan = document.createElement('span');
-                    unlockSpan.textContent = " [Unlocked]";
-                    // unlockSpan.style.color = choiceColor;
-                    unlockSpan.style.color = "gray";
+                    unlockSpan.textContent = ' [Unlocked]';
+                    unlockSpan.style.color = 'gray';
                     btn.appendChild(unlockSpan);
                 }
+                
+                if (visitedScenes.has(choice.next)) {
+                    const visitedSpan = document.createElement('span');
+                    visitedSpan.textContent = ' [Visited]';
+                    visitedSpan.style.color = 'gray';
+                    btn.appendChild(visitedSpan);
+                    btn.disabled = true;
+                    btn.style.opacity = '0.5';
+                }
             }
-            setTimeout(() => {
-                btn.classList.add('show');
-                choicesContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            },0);
-            setTimeout(() => {
-               if (isLocked){
-                const lockSpan = document.createElement('span');
-                lockSpan.textContent = " [...]";
-                lockSpan.style.color = "gray";
-                btn.appendChild(lockSpan);
-                btn.disabled = true;                                            
-            }
-            },5);
             
-        } else {
-            btn.textContent = choice.text + (isLocked ? " [...]" : "");
-        }
-
-
-
+        }, 5);
         if (!isLocked) {
             btn.onclick = () => {
-        
-            lockChoices(btn);
-            suppressClickSound = true;
-            playSound(choiceConfirm);
+                lockChoices(btn);
+                suppressClickSound = true;
+                playSound(choiceConfirm);
 
-            btn.style.pointerEvents = "none";
-            currentScene = choice.next;
-            renderScene();
-            addDialogue();
-    };
-}
+                visitedScenes.add(choice.next);
+                console.log(visitedScenes);
+                btn.style.pointerEvents = 'none';
+                currentScene = choice.next;
+                renderScene();
+                addDialogue();
+            };
+        }
 
         choicesContainer.appendChild(btn);
     });
-    gameScreen.appendChild(choicesContainer);
+    dialoguebox.appendChild(choicesContainer);
 }
-
+actions.push('soul');
 const chapterColor = '#ca4646ff';
 const choiceColor = '#caa046ff';
 const choiceBtnColor = '#e7e7e7ff';
@@ -402,98 +435,68 @@ const gotNewItem = '#596b4f';
 const scenes = {
     intro: {
         text: [
-            {text: `There is a desk in front of you.`},
-            {text: `It is not wise to check what is inside.`},
+            { text: `We have to find the 3 eternal stones from all three places.` },
+            { text: `Where to start?` },
         ],
         choices: [
-            { text: "1. Open Desk", next: "desk_opened"},
-            { text: "2. Don't Waste Time", next: "desk_unopened"},
-        ]
+            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
+            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
+            { text: 'Go to the Lost Island', next: 'lost_island' },
+            {
+                text: 'Fight the Final Boss',
+                next: 'final_boss',
+                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
+            },
+            // { text: "Worthy of the Sword", next: "final_boss", requires: [`soul`], visited:['sky_kingdom']},
+        ],
     },
-    desk_opened: {
-        text: [
-            {text: `You opened the Desk`, color:`${choiceColor}`, 
-            outcome: [
-                {text : `ⓘ You found a gun`},
-                {action: `desk_opened_gun_found`}
-            ]},
-            {text: `You changed your mind, Maybe its not wise to open the desk.`},
-            {text: `A Revolver`},
-            {text: `There is just a single bullet inside.`},
-            {text: `"Hope i don't have to use it."`}
-          ],
+    sky_kingdom: {
+        text: [{ text: `We Entered Sky Kingdom.` }, { text: `Where to next?` }],
         choices: [
-
+            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
+            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
+            { text: 'Go to the Lost Island', next: 'lost_island' },
+            {
+                text: 'Fight the Final Boss',
+                next: 'final_boss',
+                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
+                
+            },
+            // { text: "Worthy of the Sword", next: "final_boss", requires: [`soul`], visited:['sky_kingdom']},
         ],
-        continue: [
-            {next: 'confrontation'}
-        ]
     },
-    desk_unopened: {
-        text: [
-            {text: `"I don't have time to waste checking a desk at this time."`, color:`${choiceColor}`,
-            outcome: [
-                {action: `desk_remains_closed`}
-            ]},
-        
-        ],
+    mountain_kingdom: {
+        text: [{ text: `We Entered Mountain Kingdom.` }, { text: `Where to next?` }],
         choices: [
-
+            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
+            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
+            { text: 'Go to the Lost Island', next: 'lost_island' },
+            {
+                text: 'Fight the Final Boss',
+                next: 'final_boss',
+                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
+            },
+            // { text: "Worthy of the Sword", next: "final_boss", requires: [`soul`], visited:['sky_kingdom']},
         ],
-        continue: [
-            {next: 'confrontation'}
-        ]
     },
-    confrontation: {
-        text: [
-            {text: `You go to the balcony.`},
-            {text: `You see a guy holding a child at gun point`},
-            {text: `"Don't come any near or i will shoot."`},
-            {text: `"You know i have nothing to lose."`},
+    lost_island: {
+        text: [{ text: `We Entered Lost Island.` }, { text: `Where to next?` }],
+        choices: [
+            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
+            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
+            { text: 'Go to the Lost Island', next: 'lost_island' },
+            {
+                text: 'Fight the Final Boss',
+                next: 'final_boss',
+                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
+            },
         ],
-        timedchoices: [
-            { text: "1. Shoot Gun", next: "shoot_gun", requires: 'desk_opened_gun_found'},
-            { text: "2. Inimidate With Gun", next: "shoot_gun", requires: ['desk_opened_gun_found','shooting_skills']},
-            { text: "3. Assure", next: "reason_with_enemy" },
-            { text: "4. Request", next: "request_with_enemy" },
-        ]
     },
-    reason_with_enemy: {
-        text: [
-            {text: `"You don't have to do this."`, color:`${choiceColor}`},
-            {text: `"I will make sure you get that money. Leave that girl alone."`},
-            {text: `"She is what keeping me alive, I can see through those lying eyes."`},
-            {text: `You try to go near the enemy`},
-        ],
-        end: [
-            {text: `He shoots at you. The bullet hits your right temple.`},
-            {text: 'Game Over: Instant Death'}
-        ]
+    final_boss: {
+        text: [{ text: `Final boss is infront of you` }, { text: `You defeat the Final boss.` }],
+        end: [{ text: `****The End****` }],
     },
-    request_with_enemy: {
-        text: [
-            {text: `You see a guy holding a child at gun point`, color:`${choiceColor}`},
-            {text: `"Don't come any near or i will shoot."`},
-            {text: `"You know i have nothing to lose."`},
-            {text: `You try to go near the enemy`},
-        ],
-        end: [
-            {text: `He shoots at you. The bullet hits at your heart.`},
-            {text: 'Game Over: You collapse on the ground bleeding to death.'}
-        ]
-    },
-    shoot_gun: {
-        text: [
-            {text: `In a Second you aim at his hand and shoot.`, color:`${choiceColor}`},
-            {text: `The bullet hits his hand causing his grip on the gun to lose`},
-            {text: `"Now you got nothing to lose and no way to win."`},
-        ],
-        end: [
-            {text:'He surrenders and let go of the girl.'},
-            {text:'Game Won'}
-        ]
-    },
-}
+};
 
 renderScene();
 addDialogue();
