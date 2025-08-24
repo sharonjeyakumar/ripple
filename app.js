@@ -1,3 +1,128 @@
+// Character System
+class Character{
+    constructor(name,maxHealth,currentHealth){
+        this.name = name;
+        this.maxHealth = maxHealth;
+        this.currentHealth = currentHealth;
+    }
+
+    takeDamage(amount) {
+        this.currentHealth -=amount;
+        if(this.currentHealth < 0){
+            this.currentHealth = 0;
+        }
+        updateHealth();
+    }
+}
+
+class Enemy{
+    constructor(name,maxHealth,currentHealth){
+        this.name = name;
+        this.maxHealth = maxHealth;
+        this.currentHealth = currentHealth;
+    }
+
+    takeDamage(amount) {
+        this.currentHealth -=amount;
+        if(this.currentHealth < 0){
+            this.currentHealth = 0;
+        }
+        updateEHealth();
+    }
+}
+
+
+
+const Sharon = new Character('Sharon',5,5);
+const Varshan = new Character('Varshan',2,2);
+
+const Pranav = new Enemy('Pranav', 3,3);
+
+//Health System
+let currentCharacter = null;
+let currentEnemy = null;
+// console.log(currentCharacter);
+
+
+
+
+const healthContainer = document.querySelector('.health_container');
+const healthBar = document.querySelector('.health_bar');
+const healthText = document.querySelector('.health_text');
+const characterName = document.querySelector('.characterName');
+
+const ehealthContainer = document.querySelector('.ehealth_container');
+const ehealthBar = document.querySelector('.ehealth_bar');
+const ehealthText = document.querySelector('.ehealth_text');
+const echaracterName = document.querySelector('.echaracterName');
+
+
+function updateHealthBar(){
+    for (let i = 0; i < currentCharacter.maxHealth; i++) {
+        const healthBar = document.createElement('div');
+        healthBar.classList.add('health_bar');
+        healthContainer.appendChild(healthBar);
+    }
+}
+function updateEHealthBar(){
+    for (let i = 0; i < currentEnemy.maxHealth; i++) {
+        const ehealthBar = document.createElement('div');
+        ehealthBar.classList.add('ehealth_bar');
+        ehealthContainer.appendChild(ehealthBar);
+    }
+}
+
+function updateHealth() {
+    const bars = document.querySelectorAll('.health_bar');
+    bars.forEach((bar, index) => {
+        if (index < currentCharacter.currentHealth) {
+            bar.style.backgroundColor = "#e96408"; // filled
+        } else {
+            bar.style.backgroundColor = "#353535ff"; // empty
+        }
+    });
+
+    if (healthText) {
+        healthText.textContent = `${currentCharacter.currentHealth}/${currentCharacter.maxHealth}`;
+    }
+}
+function updateEHealth() {
+    const bars = document.querySelectorAll('.ehealth_bar');
+    bars.forEach((bar, index) => {
+        if (index < currentEnemy.currentHealth) {
+            bar.style.backgroundColor = "#0d758f"; // filled
+        } else {
+            bar.style.backgroundColor = "#353535ff"; // empty
+        }
+    });
+
+    if (ehealthText) {
+        ehealthText.textContent = `${currentEnemy.currentHealth}/${currentEnemy.maxHealth}`;
+    }
+}
+
+function updateCharacterSwitch(char){
+    characterName.textContent = char.name+':';
+    healthContainer.innerHTML ="";
+    updateHealthBar();
+    updateHealth();
+}
+
+function updateECharacterSwitch(echar){
+    echaracterName.textContent = echar.name+':';
+    ehealthContainer.innerHTML ="";
+    updateEHealthBar();
+    updateEHealth();
+}
+
+
+
+
+
+
+
+
+
 // Assets Importing
 const fxchoiceSound = 'sfx/choicesound.mp3';
 const choiceSound = new Audio(fxchoiceSound);
@@ -84,11 +209,23 @@ let suppressClickSound = false;
 let actions = [];
 let visitedScenes = new Set();
 
+let highlightNextLine = false;
+
 function renderScene() {
     const scene = scenes[currentScene];
     currentDialogue = 0;
     dialogue = scene.text;
     choicesShown = false;
+}
+
+function outcome(input){
+    const infoEl = document.createElement('div');
+    infoEl.classList.add('infoText');
+    const element = document.createElement('h2');
+    element.textContent = input;
+    infoEl.appendChild(element);
+    dialoguebox.appendChild(infoEl);
+    return infoEl;
 }
 
 function addDialogue() {
@@ -111,6 +248,9 @@ function addDialogue() {
 
         if (line.color) {
             element.style.color = line.color;
+        } else if (highlightNextLine && currentDialogue === 0) {
+            element.style.color = choiceColor;
+            highlightNextLine = false;
         }
 
         // Handle any actions/outcomes attached to this line
@@ -118,26 +258,54 @@ function addDialogue() {
             line.outcome.forEach((item) => {
                 if (item.text) {
                     // Optionally, display additional info text
-                    const infoEl = document.createElement('div');
-                    infoEl.classList.add('infoText');
-                    const element = document.createElement('h2');
-                    element.textContent = item.text;
-                    infoEl.appendChild(element);
-                    dialoguebox.appendChild(infoEl);
+                    const infoEl = outcome(item.text);
                     setTimeout(() => {
                         playSound(itemFound);
+                        infoEl.style.color = gotNewItemColor;
                         infoEl.classList.add('show');
                         infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
                     }, 300);
                 }
                 if (item.action) {
-                    // Add the action to global actions array
-                    // actions.push(item.action);
                     actions.push(...item.action);
                     console.log(actions);
                 }
+                
             });
         }
+
+        if(line.damage) {
+            const infoEl = outcome(`ⓘ Damaged Health -${line.damage}`);
+            setTimeout(() => {
+                playSound(itemFound);
+                infoEl.style.color = redColor;
+                infoEl.classList.add('show');
+                currentCharacter.takeDamage(line.damage);
+                infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 300);   
+        }
+        if(line.attack) {
+            const infoEl = outcome(`ⓘ Damaged Enemy's Health -${line.attack}`);
+            setTimeout(() => {
+                playSound(itemFound);
+                infoEl.style.color = enemydamageColor;
+                infoEl.classList.add('show');
+                currentEnemy.takeDamage(line.attack);
+                infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 300);   
+        }
+
+        if(line.characterSwitch){
+            currentCharacter = line.characterSwitch;
+            updateCharacterSwitch(line.characterSwitch);
+        }
+        if(line.enemySwitch){
+            currentEnemy = line.enemySwitch;
+            updateECharacterSwitch(line.enemySwitch);
+        }
+        
+
+        
 
         setTimeout(() => {
             element.classList.add('show');
@@ -253,6 +421,8 @@ function showTimedChoices(choices, timeLimit = 6000) {
             if (picked) return;
             picked = true;
             clearTimeout(timeoutId);
+
+            highlightNextLine = true;
 
             timerBar.style.display = 'none';
             visitedScenes.add(choice.next);
@@ -412,7 +582,7 @@ function showChoices(choices) {
                 lockChoices(btn);
                 suppressClickSound = true;
                 playSound(choiceConfirm);
-
+                highlightNextLine = true;
                 visitedScenes.add(choice.next);
                 console.log(visitedScenes);
                 btn.style.pointerEvents = 'none';
@@ -426,106 +596,51 @@ function showChoices(choices) {
     });
     dialoguebox.appendChild(choicesContainer);
 }
-actions.push('soul');
-const chapterColor = '#ca4646ff';
+
+const redColor = '#b72100';
 const choiceColor = '#caa046ff';
 const choiceBtnColor = '#e7e7e7ff';
-const gotNewItem = '#596b4f';
+const gotNewItemColor = '#596b4f';
+const enemydamageColor = '#005fb7ff';
 
 const scenes = {
     intro: {
         text: [
-            {text: `There is a desk in front of you.`},
-            {text: `It is not wise to check what is inside.`},
+            {text: `You open your eyes and to your horror.`},
+            {text: `Pranav, Son of Kratos Stands before you.`, enemySwitch:Pranav},
+            {text: `Sharon: "My name is sharon and i will handle this."`, characterSwitch:Sharon},
+            {text: `Gets punched in the face`, damage:1},
+            {text: `Varshan: "My name is Varshan and i will handle this."`,characterSwitch:Varshan},
+            {text: `Gets Kicked in the face`, damage:1},
+            {text: `Sharon: "Guess I have to handle it again"`, characterSwitch:Sharon},
         ],
         choices: [
-            { text: "Open Desk", next: "desk_opened"},
-            { text: "Don't Waste Time", next: "desk_unopened"},
+            {text: 'Punch Him or Die Trying', next: 'pranav_gets_punched'},
+            {text: 'Beg for your life', next: 'pranav_laughs'},
         ]
     },
-    desk_opened: {
+    
+    pranav_gets_punched: {
         text: [
-            {text: `You changed your mind, Maybe it is wise to open the desk.`, color:`${choiceColor}`},
-            {text: `You opened the Desk`, 
-            outcome: [
-                {text : `ⓘ You found a gun`},
-                {action: [`desk_opened_gun_found`,`letter`]}
-            ]},
-            {text: `A Revolver`},
-            {text: `There is just a single bullet inside.`},
-            {text: `"Hope i don't have to use it."`}
-          ],
-        choices: [
+            {text: `Sharon Punches Pranav with all he got.`, attack:1},
+            {text: `He would have gotten -0.5 damage if the game would have allowed it.`},
+        ],
+        end:[
+            {text:'Sharon Died out of heartattack.', damage:4},
+            {text: '****The End****'}
+        ]
+    },
+    pranav_laughs: {
+        text: [
+            {text: `Sharon: "Please don't kill me."`},
+            {text: `Pranav Laughs and procedes to kill Sharon.`},
+            {text:'Sharon Died with Shame.', damage:4},
+        ],
+        end:[
+            {text: '****The End****'}
+        ]
+    },
 
-        ],
-        continue: [
-            {next: 'confrontation'}
-        ]
-    },
-    desk_unopened: {
-        text: [
-            {text: `"I don't have time to waste checking a desk at this time."`, color:`${choiceColor}`,
-            outcome: [
-                {action: `desk_remains_closed`}
-            ]},
-        
-        ],
-        choices: [
-
-        ],
-        continue: [
-            {next: 'confrontation'}
-        ]
-    },
-    confrontation: {
-        text: [
-            {text: `You go to the balcony.`},
-            {text: `You see a guy holding a child at gun point`},
-            {text: `"Don't come any near or i will shoot."`},
-            {text: `"You know i have nothing to lose."`},
-        ],
-        timedchoices: [
-            { text: "Shoot Gun", next: "shoot_gun", requires: 'desk_opened_gun_found'},
-            { text: "Inimidate With Gun", next: "shoot_gun", requires: ['desk_opened_gun_found','shooting_skills']},
-            { text: "Assure", next: "reason_with_enemy" },
-            { text: "Request", next: "request_with_enemy" },
-        ]
-    },
-    reason_with_enemy: {
-        text: [
-            {text: `"You don't have to do this."`, color:`${choiceColor}`},
-            {text: `"I will make sure you get that money. Leave that girl alone."`},
-            {text: `"She is what keeping me alive, I can see through those lying eyes."`},
-            {text: `You try to go near the enemy`},
-        ],
-        end: [
-            {text: `He shoots at you. The bullet hits your right temple.`},
-            {text: 'Game Over: Instant Death'}
-        ]
-    },
-    request_with_enemy: {
-        text: [
-            {text: `Please don't do this.`, color:`${choiceColor}`},
-            {text: `"She is just a child, Leave her out of this."`},
-            {text: `"Don't come any near or i will shoot."`},
-            {text: `You try to go near the enemy`},
-        ],
-        end: [
-            {text: `He shoots at you. The bullet hits at your heart.`},
-            {text: 'Game Over: You collapse on the ground bleeding to death.'}
-        ]
-    },
-    shoot_gun: {
-        text: [
-            {text: `In a Second you aim at his hand and shoot.`, color:`${choiceColor}`},
-            {text: `The bullet hits his hand causing his grip on the gun to lose`},
-            {text: `"Now you got nothing to lose and no way to win."`},
-        ],
-        end: [
-            {text:'He surrenders and let go of the girl.'},
-            {text:'Game Won'}
-        ]
-    },
 }
 
 renderScene();

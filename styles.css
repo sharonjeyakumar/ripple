@@ -64,6 +64,7 @@ p{
     justify-content: center;
     align-items: end;
     background-color: #181818;
+    color: white;
 }
 
 #gamescreen{
@@ -178,12 +179,13 @@ hr.divider {
 }
 
 .infoText{
-    margin-bottom: 15px;
     font-weight: 300;
     opacity: 0;
     transition: opacity 0.3s ease;
     /* border: 1px solid white; */
-    color: #596b4f;
+    height: auto;
+    align-self: flex-start;
+    padding-bottom: 15px;
 }
 .infoText.show{
     opacity: 1;
@@ -250,4 +252,99 @@ hr.divider {
   width: 100%;
   background: white;
   transition: width linear;
+}
+
+
+/* Profile */
+
+#hud{
+    margin-top: 20px;
+    width: 100%;
+    height: 50px;
+    display: flex;
+    justify-content: space-between;
+  
+}
+#profileWrapper{
+    /* margin-top: 20px; */
+    
+    width: 150px;
+    height: 50px;
+    /* border: 1px solid white; */
+    display: flex;
+    justify-content: start;
+    align-items: start;
+    flex-direction: column;
+}
+
+.characterName{
+    margin-bottom: 6px;
+}
+.profileContainer{
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.health_container{
+    width: 100%;
+    height: 5px;
+    display: flex;
+    margin-bottom: 10px;
+    gap: 4px;
+    /* background-color: #242424; */
+}
+
+.health_bar{
+    background-color: #e96408;
+    height: 6px;
+    flex: 1;
+}
+
+.ehealth_bar{
+    background-color: #0d758f;
+    height: 6px;
+    flex: 1;
+}
+
+.health_text{
+    letter-spacing: 0.2rem;
+}
+/* Redundant For Enemy */
+#eprofileWrapper{
+    width: 150px;
+    height: 50px;
+    /* border: 1px solid white; */
+    display: flex;
+    justify-content: start;
+    align-items: start;
+    flex-direction: column;
+}
+
+.echaracterName{
+    margin-bottom: 6px;
+}
+.eprofileContainer{
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+}
+
+.ehealth_container{
+    width: 100%;
+    height: 5px;
+    display: flex;
+    margin-bottom: 10px;
+    gap: 4px;
+    /* background-color: #242424; */
+}
+
+.ehealth_bar{
+    background-color: #e96408;
+    height: 6px;
+    flex: 1;
+}
+
+.ehealth_text{
+    letter-spacing: 0.2rem;
 }
