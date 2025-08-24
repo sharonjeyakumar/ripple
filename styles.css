@@ -138,9 +138,10 @@ p{
 
 .choiceBtn:disabled {
     opacity: 0.5;
-    cursor: not-allowed;
+    /* cursor: not-allowed; */
     filter: grayscale(50%);
 }
+
 .infoText{
     /* border: 1px solid white; */
     margin-bottom: 15px;

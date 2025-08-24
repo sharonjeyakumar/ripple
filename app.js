@@ -177,29 +177,62 @@ function showTimedChoices(choices, timeLimit = 6000) {
     let timeoutId;
 
     choices.forEach((choice, index) => {
-        const btn = document.createElement('button');
-        btn.classList.add('choiceBtn');
+    const btn = document.createElement('button');
+    btn.classList.add('choiceBtn');
 
-        const match = choice.text.match(/^(\d+\.)\s*(.*)$/);
-        if (match) {
-            const indexSpan = document.createElement('span');
-            indexSpan.textContent = match[1];
-            indexSpan.style.color = "white";
-
-            const textSpan = document.createElement('span');
-            textSpan.textContent = " " + match[2];
-            textSpan.style.color = choiceBtnColor;
-
-            btn.appendChild(indexSpan);
-            btn.appendChild(textSpan);
+    // Check lock condition
+    let isLocked = false;
+    let hadRequires = false;
+    if (choice.requires) {
+        hadRequires = true;
+        if (Array.isArray(choice.requires)) {
+            isLocked = !choice.requires.every(req => actions.includes(req));
         } else {
-            btn.textContent = choice.text;
+            isLocked = !actions.includes(choice.requires);
         }
+    }
 
-        setTimeout(() => btn.classList.add('show'));
+    // Split "1. Text"
+    const match = choice.text.match(/^(\d+\.)\s*(.*)$/);
+    if (match) {
+        const indexSpan = document.createElement('span');
+        indexSpan.textContent = match[1];
+        indexSpan.style.color = "white";
 
+        const textSpan = document.createElement('span');
+        textSpan.textContent = " " + match[2];
+        textSpan.style.color = choiceBtnColor;
+
+        btn.appendChild(indexSpan);
+        if (!isLocked) {
+            btn.appendChild(textSpan);
+        }
+    } else {
+        btn.textContent = choice.text;
+    }
+
+    setTimeout(() => btn.classList.add('show'));
+
+    
+    setTimeout(() => {
+        if(!isLocked){
+            if (hadRequires) {
+                const unlockSpan = document.createElement('span');
+                unlockSpan.textContent = " [Unlocked]";
+                // unlockSpan.style.color = choiceColor;
+                unlockSpan.style.color = "gray";
+                btn.appendChild(unlockSpan);
+            }
+        } 
+        if (isLocked){
+            const lockSpan = document.createElement('span');
+            lockSpan.textContent = " [...]";
+            lockSpan.style.color = "gray";
+            btn.appendChild(lockSpan);
+            btn.disabled = true;
+            } else {
+        // Only attach click handler if not locked
         btn.onclick = () => {
-            
             if (picked) return;
             picked = true;
             clearTimeout(timeoutId);
@@ -214,13 +247,17 @@ function showTimedChoices(choices, timeLimit = 6000) {
             renderScene();
             addDialogue();
         };
+    }
+        },0);
+     
 
-        choicesContainer.appendChild(btn);
-    });
+    choicesContainer.appendChild(btn);
+});
 
     // ⏳ Timer bar
     const timerBar = document.createElement('div');
     timerBar.classList.add('timerBar');
+    timerBar.style.opacity = "0";
     const timerFill = document.createElement('div');
     timerFill.classList.add('timerFill');
     timerBar.appendChild(timerFill);
@@ -229,8 +266,9 @@ function showTimedChoices(choices, timeLimit = 6000) {
 
     setTimeout(() => {
             timerBar.scrollIntoView({ behavior: 'smooth', block: 'end' });
+             timerBar.style.opacity = "1";
         }, 50);
-
+   
     // Animate bar
     setTimeout(() => {
         timerFill.style.transitionDuration = timeLimit + "ms";
@@ -240,14 +278,15 @@ function showTimedChoices(choices, timeLimit = 6000) {
     // Auto-pick first choice after timer
     timeoutId = setTimeout(() => {
         if (!picked) {
-        const firstBtn = choicesContainer.querySelector('.choiceBtn');
-        if (firstBtn) {
-            // Instead of firstBtn.click(), call the handler directly
-            firstBtn.onclick({ 
+        const btns = choicesContainer.querySelectorAll('.choiceBtn');
+         const lastBtn = btns[btns.length - 1];
+        if (lastBtn) {
+            // Instead of lastBtn.click(), call the handler directly
+            lastBtn.onclick({ 
                 // fake event object but won't be used in animation
-                target: firstBtn,
-                preventDefault: () => {},
-                stopPropagation: () => {}
+                target: lastBtn,
+                // preventDefault: () => {},
+                // stopPropagation: () => {}
             });
         }
     }
@@ -280,7 +319,9 @@ function showChoices(choices) {
 
         //locked choices
         let isLocked = false;
+        let hadRequires = false;
         if (choice.requires) {
+            hadRequires = true;
             if (Array.isArray(choice.requires)) {
                 isLocked = !choice.requires.every(req => actions.includes(req));
             } else {
@@ -303,6 +344,13 @@ function showChoices(choices) {
             btn.appendChild(indexSpan);
             if(!isLocked){
                 btn.appendChild(textSpan);
+                if (hadRequires) {
+                    const unlockSpan = document.createElement('span');
+                    unlockSpan.textContent = " [Unlocked]";
+                    // unlockSpan.style.color = choiceColor;
+                    unlockSpan.style.color = "gray";
+                    btn.appendChild(unlockSpan);
+                }
             }
             setTimeout(() => {
                 btn.classList.add('show');
@@ -314,7 +362,7 @@ function showChoices(choices) {
                 lockSpan.textContent = " [...]";
                 lockSpan.style.color = "gray";
                 btn.appendChild(lockSpan);
-                btn.disabled = true;
+                btn.disabled = true;                                            
             }
             },5);
             
@@ -331,14 +379,15 @@ function showChoices(choices) {
 
             btn.style.pointerEvents = "none";
             const container = btn.parentElement;
-            container.querySelectorAll('.choiceBtn').forEach(b => {
-            if (b !== btn) {
-                b.style.opacity = '0.5';
-                b.disabled = true;
-            } else {
-                b.style.opacity = '1';
-            }
-        });
+            lockChoices(btn);
+        //     container.querySelectorAll('.choiceBtn').forEach(b => {
+        //     if (b !== btn) {
+        //         b.style.opacity = '0.5';
+        //         b.disabled = true;
+        //     } else {
+        //         b.style.opacity = '1';
+        //     }
+        // });
 
         currentScene = choice.next;
         renderScene();
@@ -359,13 +408,11 @@ const scenes = {
     intro: {
         text: [
             {text: `There is a desk in front of you.`},
-            {text: `It is wise to check what is inside that.`},
-            
+            {text: `It is not wise to check what is inside.`},
         ],
         timedchoices: [
-            { text: "1. Open Desk", next: "desk_opened" },
-            { text: "2. Don't Waste Time", next: "desk_unopened" },
-            
+            { text: "1. Open Desk", next: "desk_opened"},
+            { text: "2. Don't Waste Time", next: "desk_unopened"},
         ]
     },
     desk_opened: {
@@ -375,9 +422,10 @@ const scenes = {
                 {text : `ⓘ You found a gun`},
                 {action: `desk_opened_gun_found`}
             ]},
+            {text: `You changed your mind, Maybe its not wise to open the desk.`},
             {text: `A Revolver`},
             {text: `There is just a single bullet inside.`},
-            {text: `Hope i don't have to use it.`}
+            {text: `"Hope i don't have to use it."`}
           ],
         choices: [
 
@@ -388,11 +436,11 @@ const scenes = {
     },
     desk_unopened: {
         text: [
-            {text: `You changed your mind, Maybe its not wise to open the desk,`, color:`${choiceColor}`,
+            {text: `"I don't have time to waste checking a desk at this time."`, color:`${choiceColor}`,
             outcome: [
                 {action: `desk_remains_closed`}
             ]},
-            {text: `I don't have time to waste checking a desk at this time`},
+        
         ],
         choices: [
 
@@ -403,22 +451,23 @@ const scenes = {
     },
     confrontation: {
         text: [
+            {text: `You go to the balcony.`},
             {text: `You see a guy holding a child at gun point`},
-            {text: `Don't come any near or i will shoot`},
-            {text: `You know i don't have nothing to lose`},
+            {text: `"Don't come any near or i will shoot."`},
+            {text: `"You know i have nothing to lose."`},
         ],
-        choices: [
-            { text: "1. Assure", next: "reason_with_enemy" },
-            { text: "2. Request", next: "request_with_enemy" },
-            { text: "3. Shoot Gun", next: "shoot_gun", requires: 'desk_opened_gun_found'},
-            { text: "4. Inimidate With Gun", next: "shoot_gun", requires: ['desk_opened_gun_found','shooting_skills']}
+        timedchoices: [
+            { text: "1. Shoot Gun", next: "shoot_gun", requires: 'desk_opened_gun_found'},
+            { text: "2. Inimidate With Gun", next: "shoot_gun", requires: ['desk_opened_gun_found','shooting_skills']},
+            { text: "3. Assure", next: "reason_with_enemy" },
+            { text: "4. Request", next: "request_with_enemy" },
         ]
     },
     reason_with_enemy: {
         text: [
-            {text: `You don't have to do this.`, color:`${choiceColor}`},
-            {text: `I will make sure you get that money. Leave that girl alone.`},
-            {text: `She is what keeping me alive, I can see through those lying eyes.`},
+            {text: `"You don't have to do this."`, color:`${choiceColor}`},
+            {text: `"I will make sure you get that money. Leave that girl alone."`},
+            {text: `"She is what keeping me alive, I can see through those lying eyes."`},
             {text: `You try to go near the enemy`},
         ],
         end: [
@@ -429,8 +478,9 @@ const scenes = {
     request_with_enemy: {
         text: [
             {text: `You see a guy holding a child at gun point`, color:`${choiceColor}`},
-            {text: `Don't come any near or i will shoot`},
-            {text: `You know i don't have nothing to lose`},
+            {text: `"Don't come any near or i will shoot."`},
+            {text: `"You know i have nothing to lose."`},
+            {text: `You try to go near the enemy`},
         ],
         end: [
             {text: `He shoots at you. The bullet hits at your heart.`},
@@ -441,11 +491,11 @@ const scenes = {
         text: [
             {text: `In a Second you aim at his hand and shoot.`, color:`${choiceColor}`},
             {text: `The bullet hits his hand causing his grip on the gun to lose`},
-            {text: `Now you got nothing to lose and no way to win.`},
+            {text: `"Now you got nothing to lose and no way to win."`},
         ],
         end: [
             {text:'He surrenders and let go of the girl.'},
-            {text: 'Game Won'}
+            {text:'Game Won'}
         ]
     },
 }
