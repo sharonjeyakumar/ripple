@@ -396,7 +396,8 @@ function showChoices(choices) {
 
 const chapterColor = '#ca4646ff';
 const choiceColor = '#caa046ff';
-const choiceBtnColor = '#e7e7e7ff'
+const choiceBtnColor = '#e7e7e7ff';
+const gotNewItem = '#596b4f';
 
 const scenes = {
     intro: {
