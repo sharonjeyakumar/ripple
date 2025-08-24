@@ -410,7 +410,7 @@ const scenes = {
             {text: `There is a desk in front of you.`},
             {text: `It is not wise to check what is inside.`},
         ],
-        timedchoices: [
+        choices: [
             { text: "1. Open Desk", next: "desk_opened"},
             { text: "2. Don't Waste Time", next: "desk_unopened"},
         ]
