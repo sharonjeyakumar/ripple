@@ -435,68 +435,98 @@ const gotNewItem = '#596b4f';
 const scenes = {
     intro: {
         text: [
-            { text: `We have to find the 3 eternal stones from all three places.` },
-            { text: `Where to start?` },
+            {text: `There is a desk in front of you.`},
+            {text: `It is not wise to check what is inside.`},
         ],
         choices: [
-            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
-            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
-            { text: 'Go to the Lost Island', next: 'lost_island' },
-            {
-                text: 'Fight the Final Boss',
-                next: 'final_boss',
-                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
-            },
-            // { text: "Worthy of the Sword", next: "final_boss", requires: [`soul`], visited:['sky_kingdom']},
-        ],
+            { text: "Open Desk", next: "desk_opened"},
+            { text: "Don't Waste Time", next: "desk_unopened"},
+        ]
     },
-    sky_kingdom: {
-        text: [{ text: `We Entered Sky Kingdom.` }, { text: `Where to next?` }],
+    desk_opened: {
+        text: [
+            {text: `You changed your mind, Maybe it is wise to open the desk.`, color:`${choiceColor}`},
+            {text: `You opened the Desk`, 
+            outcome: [
+                {text : `ⓘ You found a gun`},
+                {action: [`desk_opened_gun_found`,`letter`]}
+            ]},
+            {text: `A Revolver`},
+            {text: `There is just a single bullet inside.`},
+            {text: `"Hope i don't have to use it."`}
+          ],
         choices: [
-            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
-            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
-            { text: 'Go to the Lost Island', next: 'lost_island' },
-            {
-                text: 'Fight the Final Boss',
-                next: 'final_boss',
-                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
-                
-            },
-            // { text: "Worthy of the Sword", next: "final_boss", requires: [`soul`], visited:['sky_kingdom']},
+
         ],
+        continue: [
+            {next: 'confrontation'}
+        ]
     },
-    mountain_kingdom: {
-        text: [{ text: `We Entered Mountain Kingdom.` }, { text: `Where to next?` }],
+    desk_unopened: {
+        text: [
+            {text: `"I don't have time to waste checking a desk at this time."`, color:`${choiceColor}`,
+            outcome: [
+                {action: `desk_remains_closed`}
+            ]},
+        
+        ],
         choices: [
-            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
-            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
-            { text: 'Go to the Lost Island', next: 'lost_island' },
-            {
-                text: 'Fight the Final Boss',
-                next: 'final_boss',
-                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
-            },
-            // { text: "Worthy of the Sword", next: "final_boss", requires: [`soul`], visited:['sky_kingdom']},
+
         ],
+        continue: [
+            {next: 'confrontation'}
+        ]
     },
-    lost_island: {
-        text: [{ text: `We Entered Lost Island.` }, { text: `Where to next?` }],
-        choices: [
-            { text: 'Go to the Sky Kingdom', next: 'sky_kingdom' },
-            { text: 'Go to the Mountain of Mountains', next: 'mountain_kingdom' },
-            { text: 'Go to the Lost Island', next: 'lost_island' },
-            {
-                text: 'Fight the Final Boss',
-                next: 'final_boss',
-                visited: [`sky_kingdom`, `mountain_kingdom`, `lost_island`],
-            },
+    confrontation: {
+        text: [
+            {text: `You go to the balcony.`},
+            {text: `You see a guy holding a child at gun point`},
+            {text: `"Don't come any near or i will shoot."`},
+            {text: `"You know i have nothing to lose."`},
         ],
+        timedchoices: [
+            { text: "Shoot Gun", next: "shoot_gun", requires: 'desk_opened_gun_found'},
+            { text: "Inimidate With Gun", next: "shoot_gun", requires: ['desk_opened_gun_found','shooting_skills']},
+            { text: "Assure", next: "reason_with_enemy" },
+            { text: "Request", next: "request_with_enemy" },
+        ]
     },
-    final_boss: {
-        text: [{ text: `Final boss is infront of you` }, { text: `You defeat the Final boss.` }],
-        end: [{ text: `****The End****` }],
+    reason_with_enemy: {
+        text: [
+            {text: `"You don't have to do this."`, color:`${choiceColor}`},
+            {text: `"I will make sure you get that money. Leave that girl alone."`},
+            {text: `"She is what keeping me alive, I can see through those lying eyes."`},
+            {text: `You try to go near the enemy`},
+        ],
+        end: [
+            {text: `He shoots at you. The bullet hits your right temple.`},
+            {text: 'Game Over: Instant Death'}
+        ]
     },
-};
+    request_with_enemy: {
+        text: [
+            {text: `Please don't do this.`, color:`${choiceColor}`},
+            {text: `"She is just a child, Leave her out of this."`},
+            {text: `"Don't come any near or i will shoot."`},
+            {text: `You try to go near the enemy`},
+        ],
+        end: [
+            {text: `He shoots at you. The bullet hits at your heart.`},
+            {text: 'Game Over: You collapse on the ground bleeding to death.'}
+        ]
+    },
+    shoot_gun: {
+        text: [
+            {text: `In a Second you aim at his hand and shoot.`, color:`${choiceColor}`},
+            {text: `The bullet hits his hand causing his grip on the gun to lose`},
+            {text: `"Now you got nothing to lose and no way to win."`},
+        ],
+        end: [
+            {text:'He surrenders and let go of the girl.'},
+            {text:'Game Won'}
+        ]
+    },
+}
 
 renderScene();
 addDialogue();
