@@ -182,7 +182,6 @@ hr.divider {
     font-weight: 300;
     opacity: 0;
     transition: opacity 0.3s ease;
-    /* border: 1px solid white; */
     height: auto;
     align-self: flex-start;
     padding-bottom: 15px;

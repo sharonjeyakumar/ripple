@@ -258,8 +258,8 @@ function addDialogue() {
             line.outcome.forEach((item) => {
                 if (item.text) {
                     // Optionally, display additional info text
-                    const infoEl = outcome(item.text);
                     setTimeout(() => {
+                        const infoEl = outcome(item.text);
                         playSound(itemFound);
                         infoEl.style.color = gotNewItemColor;
                         infoEl.classList.add('show');
@@ -275,8 +275,8 @@ function addDialogue() {
         }
 
         if(line.damage) {
-            const infoEl = outcome(`ⓘ Damaged Health -${line.damage}`);
             setTimeout(() => {
+                const infoEl = outcome(`ⓘ Damaged Health -${line.damage}`);
                 playSound(itemFound);
                 infoEl.style.color = redColor;
                 infoEl.classList.add('show');
@@ -285,8 +285,8 @@ function addDialogue() {
             }, 300);   
         }
         if(line.attack) {
-            const infoEl = outcome(`ⓘ Damaged Enemy's Health -${line.attack}`);
             setTimeout(() => {
+                const infoEl = outcome(`ⓘ Damaged Enemy's Health -${line.attack}`);
                 playSound(itemFound);
                 infoEl.style.color = enemydamageColor;
                 infoEl.classList.add('show');
