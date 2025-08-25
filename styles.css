@@ -65,8 +65,67 @@ p{
     align-items: end;
     background-color: #181818;
     color: white;
+
 }
 
+#titleScreen{
+    overflow-y: auto;
+    scrollbar-width: none;
+    height: 100%;
+    width: 100%;
+    user-select: none;
+    white-space: pre-line;
+    
+    justify-content: start;
+    align-items: center;
+    /* border: 1px solid white; */
+    display: flex;
+    position: absolute;
+    flex-direction: column;
+    top: 0;
+    left: 0;
+    /* background-image: url(assets/bg.png); */
+    background: linear-gradient(to bottom, #1c1004, #080401); 
+    background-size: cover;
+}
+#titleScreen h1{
+    font-size: 1.4rem;
+    color: #8a4e13;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #4e2c0b;
+    opacity: 0; /* start hidden */
+    animation: titleFadeIn 1s ease forwards;
+    animation-delay: 1s;
+}
+
+
+.logo{
+    margin-top: 40px;
+    width: 300px;
+    height: 300px;
+    background-image: url(assets/logo.svg);
+    background-size: contain;
+    background-repeat: no-repeat;
+
+    animation: logoFadeIn 1s ease forwards;
+    animation-delay: 0s, 3s; 
+}
+
+@keyframes logoFadeIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes logoRotate {
+    0%   { transform: rotate(-3deg); }
+    50%  { transform: rotate(3deg); }
+    100% { transform: rotate(-3deg); }
+}
+
+@keyframes titleFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
 #gamescreen{
     position: relative;
     overflow-y: auto;
@@ -80,6 +139,7 @@ p{
     align-items: center;
     /* border: 1px solid white; */
     display: flex;
+    /* display: none; */
 }
 
 #gameWrapper{
@@ -179,6 +239,7 @@ hr.divider {
 }
 
 .infoText{
+
     font-weight: 300;
     opacity: 0;
     transition: opacity 0.3s ease;
