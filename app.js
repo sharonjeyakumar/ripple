@@ -1,3 +1,107 @@
+//Title Screen
+const titleScreen = document.getElementById('titleScreen');
+
+const endingsBtn = document.getElementById('endingsBtn');
+const endingBox = document.getElementById('endingBox');
+const initialPrompt = document.getElementById('initialPrompt');
+
+const newGameBtn = document.getElementById('newGameBtn');
+
+const vinyl = document.querySelector('.vinyl');
+const vinylMusicName = document.getElementById('musicName');
+let currentState = 'initial_prompt';
+
+initialPrompt.addEventListener('click',()=>{
+    initialPrompt.classList.add('close');
+    currentState = 'main_menu';
+    setTimeout(()=>{
+        vinyl.classList.add('spin');
+    },50);
+    setupMainMenu();
+    // playSound(sounds.mainmenu);
+    vinylHandler("Main Menu");
+});
+
+function vinylHandler(ost){
+    vinylMusicName.textContent =ost;
+}
+
+
+let isEndingBoxOpened = false;
+
+
+function setupMainMenu() {
+
+    newGameBtn.addEventListener('click',()=>{
+        startNewGame();
+    })
+
+    // Toggle endings
+    endingsBtn.addEventListener('click', () => {
+        if (!isEndingBoxOpened) {
+            endingsBtn.style.backgroundColor = '#301b07';
+            endingBox.classList.add('show');
+            isEndingBoxOpened = true;
+        } else {
+            endingsBtn.style.backgroundColor = '#4e2c0b';
+            endingBox.classList.remove('show');
+            isEndingBoxOpened = false;
+        }
+    });
+
+    // Endings
+    const endings = ['Died Drinking Poison', 'Defeated Final Boss'];
+    const endingsAchieved = new Set();
+
+    endingsAchieved.add('Died Drinking Poison');
+
+    // Append endings list
+    endings.forEach((ending, index) => {
+        const div = document.createElement("div");
+        const h2 = document.createElement("h2");
+        div.classList.add('endingsDiv');
+
+        if (endingsAchieved.has(ending)) {
+            h2.textContent = `${index + 1}. ${ending}`;
+        } else {
+            h2.textContent = `${index + 1}. [Unknown]`;
+        }
+
+        div.appendChild(h2);
+        endingBox.appendChild(div);
+    });
+}
+function startNewGame(){
+    titleScreen.classList.add('off');
+    vinyl.classList.remove('spin');
+    closeTitleScreen();
+    setTimeout(()=>{
+        gameScreen.style.display = 'flex';
+
+    },300)
+}
+
+function closeTitleScreen() {
+    titleScreen.classList.add('fadeOut'); // start fade
+    
+    // after transition ends → set display:none
+    titleScreen.addEventListener('transitionend', () => {
+        titleScreen.classList.add('hidden');
+    }, { once: true });
+}
+
+//
+const musicName = document.getElementById('musicName');
+
+
+
+//Save Handling
+
+
+
+
+
+
 // Character System
 class Character{
     constructor(name,maxHealth,currentHealth){
@@ -120,21 +224,18 @@ function updateECharacterSwitch(echar){
 
 
 
+const sounds = {
+    mainmenu: new Audio("ost/mainmenu.mp3"),
+    choice: new Audio("sfx/choicesound.mp3"),
+    choiceConfirm: new Audio("sfx/choiceconfirm.mp3"),
+    click: new Audio("sfx/click-sound3.mp3"),
+    itemFound: new Audio("sfx/item-found.mp3")
+};
 
 
 
-// Assets Importing
-const fxchoiceSound = 'sfx/choicesound.mp3';
-const choiceSound = new Audio(fxchoiceSound);
 
-const fxchoiceConfirm = 'sfx/choiceconfirm.mp3';
-const choiceConfirm = new Audio(fxchoiceConfirm);
 
-const fxClickSound = `sfx/click-sound3.mp3`;
-const clickSound = new Audio(fxClickSound);
-
-const fxItemFound = `sfx/item-found.mp3`;
-const itemFound = new Audio(fxItemFound);
 
 //Game Screen
 const gameScreen = document.getElementById('gamescreen');
@@ -210,6 +311,7 @@ let actions = [];
 let visitedScenes = new Set();
 
 let highlightNextLine = false;
+let canAdvanceDialogue = true;
 
 function renderScene() {
     const scene = scenes[currentScene];
@@ -229,9 +331,11 @@ function outcome(input){
 }
 
 function addDialogue() {
+
+    if(!canAdvanceDialogue) return;
     if (currentDialogue <= dialogue.length - 1) {
         if (!suppressClickSound) {
-            playSound(clickSound); // normal dialogue click
+            playSound(sounds.click); // normal dialogue click
         } else {
             suppressClickSound = false; // consume it for choice confirm
         }
@@ -248,7 +352,7 @@ function addDialogue() {
 
         if (line.color) {
             element.style.color = line.color;
-        } else if (highlightNextLine && currentDialogue === 0) {
+        } else if (highlightNextLine && currentDialogue === 0 && choicesShown) {
             element.style.color = choiceColor;
             highlightNextLine = false;
         }
@@ -257,41 +361,58 @@ function addDialogue() {
         if (line.outcome) {
             line.outcome.forEach((item) => {
                 if (item.text) {
-                    // Optionally, display additional info text
+                    canAdvanceDialogue = false;
                     setTimeout(() => {
                         const infoEl = outcome(item.text);
-                        playSound(itemFound);
+                        playSound(sounds.itemFound);
                         infoEl.style.color = gotNewItemColor;
-                        infoEl.classList.add('show');
-                        infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        requestAnimationFrame(() => {
+                            infoEl.classList.add('show');
+                            infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                        });
+                        canAdvanceDialogue=true;
                     }, 300);
                 }
                 if (item.action) {
+                // If it's an array, push all items; else push single action
+                if (Array.isArray(item.action)) {
                     actions.push(...item.action);
-                    console.log(actions);
+                } else {
+                    actions.push(item.action);
+                }
+                console.log(actions);
                 }
                 
             });
         }
+        console.log(canAdvanceDialogue);
 
         if(line.damage) {
+            currentCharacter.takeDamage(line.damage);
+            canAdvanceDialogue = false;
             setTimeout(() => {
                 const infoEl = outcome(`ⓘ Damaged Health -${line.damage}`);
-                playSound(itemFound);
+                playSound(sounds.itemFound);
                 infoEl.style.color = redColor;
-                infoEl.classList.add('show');
-                currentCharacter.takeDamage(line.damage);
-                infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                requestAnimationFrame(() => {
+                    infoEl.classList.add('show');
+                    infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                });
+                canAdvanceDialogue=true;
             }, 300);   
         }
         if(line.attack) {
+            canAdvanceDialogue = false;
+            currentEnemy.takeDamage(line.attack);
             setTimeout(() => {
                 const infoEl = outcome(`ⓘ Damaged Enemy's Health -${line.attack}`);
-                playSound(itemFound);
+                playSound(sounds.itemFound);
                 infoEl.style.color = enemydamageColor;
-                infoEl.classList.add('show');
-                currentEnemy.takeDamage(line.attack);
-                infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                requestAnimationFrame(() => {
+                    infoEl.classList.add('show');
+                    infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                });
+                canAdvanceDialogue=true;
             }, 300);   
         }
 
@@ -323,10 +444,10 @@ function addDialogue() {
             addDialogue();
         } else if (scene.choices) {
             showChoices(scenes[currentScene].choices);
-            playSound(choiceSound);
+            playSound(sounds.choice);
         } else if (scene.timedchoices) {
             showTimedChoices(scene.timedchoices, 6000);
-            playSound(choiceSound);
+            playSound(sounds.choice);
         } else if (scene.end) {
             dialogue = scene.end;
             currentDialogue = 0;
@@ -427,7 +548,7 @@ function showTimedChoices(choices, timeLimit = 6000) {
             timerBar.style.display = 'none';
             visitedScenes.add(choice.next);
             suppressClickSound = true;
-            playSound(choiceConfirm);
+            playSound(sounds.choiceConfirm);
 
             lockChoices(btn);
             currentScene = choice.next;
@@ -581,7 +702,7 @@ function showChoices(choices) {
             btn.onclick = () => {
                 lockChoices(btn);
                 suppressClickSound = true;
-                playSound(choiceConfirm);
+                playSound(sounds.choiceConfirm);
                 highlightNextLine = true;
                 visitedScenes.add(choice.next);
                 console.log(visitedScenes);
@@ -642,6 +763,7 @@ const scenes = {
     },
 
 }
+
 
 renderScene();
 addDialogue();

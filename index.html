@@ -10,10 +10,28 @@
 </head>
 <body>
     <div id="app">
-        <!-- <div id="titleScreen">
+        <div id="titleScreen">
+
+            <div id="initialPrompt"></div>
+
             <div class="logo"></div>
             <h1>INTO THE FALLEN KINGDOM</h1>
-        </div> -->
+            <div class="btnContainer">
+                <button class="tbtn" id="newGameBtn">New Game</button>
+                <button class="tbtn">Continue</button>
+                <button class="tbtn" id="endingsBtn">Endings</button>
+            </div>
+
+            <div id="endingBox"></div>
+            <div id="musicplayer">
+                <div class="vinyl">
+                    <div class="disk"><div class="diskLine"></div></div>
+                </div>
+                <div class="music">
+                    <h2 class="musicPlaying">Now Playing: <span id="musicName"></span></h2>
+                </div>
+            </div>
+        </div>
         <div id="gamescreen">
             <div id="gameWrapper">
                 <div id="dialoguebox"></div>
