@@ -15,8 +15,8 @@ const vinyl = document.querySelector('.vinyl');
 const vinylMusicName = document.getElementById('musicName');
 
 let currentState = 'initial_prompt';
+// localStorage.clear();
 checkSaveFile();
-
 
 
 initialPrompt.addEventListener('click',()=>{
@@ -44,9 +44,9 @@ function setupMainMenu() {
     newGameBtn.addEventListener('click',()=>{
         startNewGame();
     })
-    // continueGameBtn.addEventListener('click',()=>{
-    //     continueGame();
-    // })
+    continueGameBtn.addEventListener('click',()=>{
+        continueGame();
+    })
     // resetBtn.addEventListener('click',()=>{
     //     dialoguebox.innerHTML = '';
     // })
@@ -130,9 +130,9 @@ function startNewGame(){
 
 
     dialoguebox.innerHTML = "";
-    vinyl.classList.remove('spin');
     closeTitleScreen();
     setTimeout(()=>{
+        vinyl.classList.remove('spin');
         gameScreen.style.display = 'flex';
         renderScene();
         addDialogue();
@@ -152,6 +152,7 @@ function closeTitleScreen() {
 
 function checkSaveFile() {
     const saveData = localStorage.getItem("myGameSave");
+    console.log(saveData);
     if (saveData) {
         continueGameBtn.disabled = false; // enable if save exists
     } else {
@@ -383,7 +384,7 @@ function updateHealth() {
         }
     });
 
-    if (healthText) {
+    if (healthText && !currentCharacter ==null) {
         healthText.textContent = `${currentCharacter.currentHealth}/${currentCharacter.maxHealth}`;
     }
 }
@@ -397,7 +398,7 @@ function updateEHealth() {
         }
     });
 
-    if (ehealthText) {
+    if (ehealthText && !currentEnemy ==null) {
         ehealthText.textContent = `${currentEnemy.currentHealth}/${currentEnemy.maxHealth}`;
     }
 }
@@ -443,11 +444,14 @@ const saveBtn = document.getElementById('saveBtn');
 
 backBtn.addEventListener('click',()=>{
    goBackToMainMenu();
+//    saveGame();
+   choicesShown = false;
 })
 
 function goBackToMainMenu(){
  // saveGame();
     currentState = 'main_menu';
+    
     checkSaveFile();
     gameScreen.style.display = 'none';
     titleScreen.classList.remove('hidden', 'fadeOut');
@@ -457,6 +461,11 @@ function goBackToMainMenu(){
 saveBtn.addEventListener('click',()=>{
     saveGame();
 })
+
+function deleteSave(){
+    localStorage.removeItem("myGameSave");
+
+}
 
 function playSound(sound) {
     try {
@@ -783,6 +792,7 @@ if (!isPC()) { // only append icons if NOT a PC
     dialoguebox.appendChild(endingPromptContanier);
 
     goToMainMenuBtn.addEventListener('click',()=>{
+        deleteSave();
         goBackToMainMenu();
     });
     playAgainBtn.addEventListener('click',()=>{
@@ -1003,6 +1013,8 @@ function showChoices(choices) {
 
         let isCannotVisit = false;
         let showText = true;
+
+
         if (choice.requires) {
             hadRequires = true;
             if (Array.isArray(choice.requires)) {
@@ -1130,7 +1142,7 @@ const scenes = {
             {text:'Sharon Died with Shame.', damage:4},
         ],
         end:[
-            {text: '****The End****'},
+            {text: '****The End****',ending:'Defeated Final Boss'},
         ]
     },
 

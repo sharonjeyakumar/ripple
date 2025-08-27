@@ -107,6 +107,8 @@ p{
     /* border: 1px solid #dbd3ca; */
     position: absolute;
     z-index: 1;
+    /* opacity: 0.4; */
+    /* background-color: black; */
 }
 #initialPrompt.close{
     display: none;
