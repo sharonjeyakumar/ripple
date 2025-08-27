@@ -6,10 +6,16 @@ const endingBox = document.getElementById('endingBox');
 const initialPrompt = document.getElementById('initialPrompt');
 
 const newGameBtn = document.getElementById('newGameBtn');
+const continueGameBtn = document.getElementById('continueGameBtn');
+const resetBtn = document.getElementById('resetBtn');
 
 const vinyl = document.querySelector('.vinyl');
 const vinylMusicName = document.getElementById('musicName');
+
 let currentState = 'initial_prompt';
+checkSaveFile();
+
+
 
 initialPrompt.addEventListener('click',()=>{
     initialPrompt.classList.add('close');
@@ -29,16 +35,34 @@ function vinylHandler(ost){
 
 let isEndingBoxOpened = false;
 
+const endings = ['Died by Poison', 'Defeated Final Boss'];
+let endingsAchieved = new Set();
+
 
 function setupMainMenu() {
 
     newGameBtn.addEventListener('click',()=>{
         startNewGame();
     })
+    continueGameBtn.addEventListener('click',()=>{
+        continueGame();
+    })
+    // resetBtn.addEventListener('click',()=>{
+    //     dialoguebox.innerHTML = '';
+    // })
 
     // Toggle endings
     endingsBtn.addEventListener('click', () => {
-        if (!isEndingBoxOpened) {
+        handleEndingBox();
+    });
+    loadEnding();
+
+    // Append endings list
+    appendEndings();
+}
+
+function handleEndingBox(){
+if (!isEndingBoxOpened) {
             endingsBtn.style.backgroundColor = '#301b07';
             endingBox.classList.add('show');
             isEndingBoxOpened = true;
@@ -47,15 +71,12 @@ function setupMainMenu() {
             endingBox.classList.remove('show');
             isEndingBoxOpened = false;
         }
-    });
+}
 
-    // Endings
-    const endings = ['Died Drinking Poison', 'Defeated Final Boss'];
-    const endingsAchieved = new Set();
+function appendEndings(){
 
-    endingsAchieved.add('Died Drinking Poison');
 
-    // Append endings list
+    endingBox.innerHTML = ""; 
     endings.forEach((ending, index) => {
         const div = document.createElement("div");
         const h2 = document.createElement("h2");
@@ -72,31 +93,199 @@ function setupMainMenu() {
     });
 }
 function startNewGame(){
-    titleScreen.classList.add('off');
+    
+    if(isEndingBoxOpened){
+        endingsBtn.style.backgroundColor = '#4e2c0b';
+        endingBox.classList.remove('show');
+        isEndingBoxOpened = false;
+    }
+
+    currentScene = 'intro';
+    currentDialogue = 0;
+    dialogue = [];
+    choicesShown = false;
+    suppressClickSound = false;
+    actions = [];
+    visitedScenes = new Set();
+
+    highlightNextLine = false;
+    canAdvanceDialogue = true;
+    dialogueHistory = [];
+
+    currentCharacter = null;
+    currentEnemy = null;
+
+
+    Sharon.restoreFullHp();
+    Varshan.restoreFullHp();
+    Pranav.restoreFullHp();
+
+    dialoguebox.innerHTML = "";
+    healthContainer.innerHTML = "";
+    ehealthContainer.innerHTML = "";
+    characterName.textContent = "";
+    echaracterName.textContent = "";
+    healthText.textContent = "";
+    ehealthText.textContent = "";
+
+
+    dialoguebox.innerHTML = "";
     vinyl.classList.remove('spin');
     closeTitleScreen();
     setTimeout(()=>{
         gameScreen.style.display = 'flex';
-
+        renderScene();
+        addDialogue();
     },300)
 }
 
 function closeTitleScreen() {
     titleScreen.classList.add('fadeOut'); // start fade
     
-    // after transition ends → set display:none
-    titleScreen.addEventListener('transitionend', () => {
+
+    setTimeout(()=>{
+
         titleScreen.classList.add('hidden');
-    }, { once: true });
+    },50)
+ 
 }
 
-//
+function checkSaveFile() {
+    const saveData = localStorage.getItem("myGameSave");
+    if (saveData) {
+        continueGameBtn.disabled = false; // enable if save exists
+    } else {
+        continueGameBtn.disabled = true;  // keep disabled otherwise
+    }
+}
+
+function continueGame(){
+    vinyl.classList.remove('spin');
+    closeTitleScreen();
+    setTimeout(()=>{
+        gameScreen.style.display = 'flex';
+         loadGame();
+    },300)
+}
+
+function loadGame(){
+    const data = localStorage.getItem("myGameSave");
+    if (!data) {
+        console.log("No save found.");
+        return;
+  }
+    const saveData = JSON.parse(data);
+
+    currentScene = saveData.currentScene;
+    currentDialogue = saveData.currentDialogue;
+    dialogueHistory = saveData.dialogueHistory || [];
+    actions = new Set(saveData.actions || []);
+    visitedScenes = new Set(saveData.visitedScenes || []);
+    dialogue = scenes[currentScene].text || [];
+
+    Sharon.currentHealth = saveData.characters.Sharon;
+    Varshan.currentHealth = saveData.characters.Varshan;
+    Pranav.currentHealth = saveData.enemies.Pranav;
+
+    if (saveData.currentCharacter) {
+        if (saveData.currentCharacter.name === "Sharon") currentCharacter = Sharon;
+        if (saveData.currentCharacter.name === "Varshan") currentCharacter = Varshan;
+        currentCharacter.currentHealth = saveData.currentCharacter.hp;
+        updateCharacterSwitch(currentCharacter);
+    }
+
+    if (saveData.currentEnemy) {
+        if (saveData.currentEnemy.name === "Pranav") currentEnemy = Pranav;
+        currentEnemy.currentHealth = saveData.currentEnemy.hp;
+        updateECharacterSwitch(currentEnemy);
+    }
+
+    updateHealth();
+    updateEHealth();
+
+    dialoguebox.innerHTML = "";
+    printHistory();
+
+
+    console.log("✅ Game Loaded", saveData);
+}
+
+function printHistory() {
+    dialoguebox.innerHTML = ""; // clear
+    dialogueHistory.forEach(entry => {
+        const dialogueContainer = document.createElement('div');
+        dialogueContainer.classList.add('dialogueContainer');
+
+        const element = document.createElement('h2');
+        element.textContent = entry.text;
+
+        if (entry.color) element.style.color = entry.color;
+
+        dialogueContainer.appendChild(element);
+        dialoguebox.appendChild(dialogueContainer);
+
+        // animation like before
+        requestAnimationFrame(() => {
+            element.classList.add('show');
+            dialogueContainer.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        });
+    });
+}
 const musicName = document.getElementById('musicName');
 
 
 
 //Save Handling
+function saveGame(){
+    const saveData = {
+        currentScene,
+        currentDialogue,
+        dialogueHistory,
+        actions: [...actions],
+        visitedScenes: [...visitedScenes],
+    characters: {
+            Sharon: Sharon.currentHealth,
+            Varshan: Varshan.currentHealth
+        },
+        enemies: {
+            Pranav: Pranav.currentHealth
+        },
+        currentCharacter: currentCharacter ? {
+            name: currentCharacter.name,
+            hp: currentCharacter.currentHealth,
+            maxHp: currentCharacter.maxHealth
+        } : null,
+        currentEnemy: currentEnemy ? {
+            name: currentEnemy.name,
+            hp: currentEnemy.currentHealth,
+            maxHp: currentEnemy.maxHealth
+        } : null
+    }
+    localStorage.setItem("myGameSave", JSON.stringify(saveData));
+    console.log("gameSaved", saveData);
+}
 
+function saveEnding(){
+    const endingData ={
+        endingsAchieved: Array.from(endingsAchieved),
+    }
+    localStorage.setItem("myEndings", JSON.stringify(endingData))
+}
+
+function loadEnding(){
+    const data = localStorage.getItem("myEndings");
+    if (!data) {
+        console.log("No Ending data is found.");
+        return;
+  }
+    const saveData = JSON.parse(data);
+
+    if (Array.isArray(saveData.endingsAchieved)) {
+        endingsAchieved = new Set(saveData.endingsAchieved);
+    } else {
+        endingsAchieved = new Set();
+    }
+}
 
 
 
@@ -117,6 +306,10 @@ class Character{
         }
         updateHealth();
     }
+
+    restoreFullHp() {
+    this.currentHealth = this.maxHealth;
+  }
 }
 
 class Enemy{
@@ -133,6 +326,10 @@ class Enemy{
         }
         updateEHealth();
     }
+
+    restoreFullHp() {
+    this.currentHealth = this.maxHealth;
+  }
 }
 
 
@@ -241,6 +438,21 @@ const sounds = {
 const gameScreen = document.getElementById('gamescreen');
 const dialoguebox = document.getElementById('dialoguebox');
 const gameWrapper = document.getElementById('gameWrapper');
+const backBtn = document.getElementById('backBtn');
+const saveBtn = document.getElementById('saveBtn');
+
+backBtn.addEventListener('click',()=>{
+    // saveGame();
+    currentState = 'main_menu';
+    checkSaveFile();
+    gameScreen.style.display = 'none';
+    titleScreen.classList.remove('hidden', 'fadeOut');
+    vinyl.classList.add('spin');
+    // titleScreen.style.opacity = "1";
+})
+saveBtn.addEventListener('click',()=>{
+    saveGame();
+})
 
 function playSound(sound) {
     try {
@@ -256,6 +468,9 @@ function playSound(sound) {
 function globalClickHandler(e) {
     createClickAnimation(e);
     if (!e.target.closest('#gameWrapper')) return;
+    if (e.target.closest('#backBtn')) return;
+    if (e.target.closest('#saveBtn')) return;
+    if (e.target.closest('#resetBtn')) return;
     // Don't advance dialogue if clicked anywhere inside a choice button
     if (e.target.closest('.choiceBtn')) return;
     addDialogue();
@@ -312,6 +527,7 @@ let visitedScenes = new Set();
 
 let highlightNextLine = false;
 let canAdvanceDialogue = true;
+let dialogueHistory = [];
 
 function renderScene() {
     const scene = scenes[currentScene];
@@ -350,6 +566,12 @@ function addDialogue() {
 
         dialoguebox.appendChild(dialogueContainer);
 
+       dialogueHistory.push({
+            type: "dialogue",
+            text: line.text,
+            color: line.color || (highlightNextLine && currentDialogue === 0 && choicesShown ? choiceColor : null)
+        });
+
         if (line.color) {
             element.style.color = line.color;
         } else if (highlightNextLine && currentDialogue === 0 && choicesShown) {
@@ -372,13 +594,20 @@ function addDialogue() {
                         });
                         canAdvanceDialogue=true;
                     }, 300);
+                    dialogueHistory.push({
+                        type: "outcome",
+                        text: `ⓘ ${item.text}`,
+                        color: gotNewItemColor
+                    });
                 }
                 if (item.action) {
                 // If it's an array, push all items; else push single action
                 if (Array.isArray(item.action)) {
                     actions.push(...item.action);
+                    
                 } else {
                     actions.push(item.action);
+                    
                 }
                 console.log(actions);
                 }
@@ -389,6 +618,11 @@ function addDialogue() {
 
         if(line.damage) {
             currentCharacter.takeDamage(line.damage);
+            dialogueHistory.push({
+                type: "damage",
+                text: `ⓘ Damaged Health -${line.damage}`,
+                color: redColor
+            });
             canAdvanceDialogue = false;
             setTimeout(() => {
                 const infoEl = outcome(`ⓘ Damaged Health -${line.damage}`);
@@ -404,6 +638,11 @@ function addDialogue() {
         if(line.attack) {
             canAdvanceDialogue = false;
             currentEnemy.takeDamage(line.attack);
+            dialogueHistory.push({
+                type: "attack",
+                text: `ⓘ Damaged Enemy's Health -${line.attack}`,
+                color: enemydamageColor
+            });
             setTimeout(() => {
                 const infoEl = outcome(`ⓘ Damaged Enemy's Health -${line.attack}`);
                 playSound(sounds.itemFound);
@@ -424,6 +663,27 @@ function addDialogue() {
             currentEnemy = line.enemySwitch;
             updateECharacterSwitch(line.enemySwitch);
         }
+
+        if(line.ending){
+            setTimeout(() => {
+                const infoEl = outcome(`ⓘ Ending: ${line.ending}`);
+                playSound(sounds.itemFound);
+                infoEl.style.color = redColor;
+                requestAnimationFrame(() => {
+                    infoEl.classList.add('show');
+                    infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                });
+            }, 300);  
+           if (!endingsAchieved.has(line.ending)) {
+                endingsAchieved.add(line.ending);
+                appendEndings();
+                saveEnding();
+                console.log(endingsAchieved)
+                console.log("New ending unlocked: " + line.ending);
+
+            }
+        }
+
         
 
         
@@ -449,9 +709,11 @@ function addDialogue() {
             showTimedChoices(scene.timedchoices, 6000);
             playSound(sounds.choice);
         } else if (scene.end) {
+
             dialogue = scene.end;
             currentDialogue = 0;
-            choicesShown = true; // prevent showing choices
+            choicesShown = true;
+            highlightNextLine = false;// prevent showing choices
             addDialogue();
         }
     }
@@ -727,41 +989,35 @@ const enemydamageColor = '#005fb7ff';
 const scenes = {
     intro: {
         text: [
-            {text: `You open your eyes and to your horror.`},
-            {text: `Pranav, Son of Kratos Stands before you.`, enemySwitch:Pranav},
-            {text: `Sharon: "My name is sharon and i will handle this."`, characterSwitch:Sharon},
-            {text: `Gets punched in the face`, damage:1},
-            {text: `Varshan: "My name is Varshan and i will handle this."`,characterSwitch:Varshan},
-            {text: `Gets Kicked in the face`, damage:1},
-            {text: `Sharon: "Guess I have to handle it again"`, characterSwitch:Sharon},
+            {text: 'You should drink this water it heals all wounds.'}
         ],
         choices: [
-            {text: 'Punch Him or Die Trying', next: 'pranav_gets_punched'},
-            {text: 'Beg for your life', next: 'pranav_laughs'},
+            {text: 'Drink the Strange liquid', next: 'drink_liquid'},
+            {text: 'Decline', next: 'decline_liquid'},
+        ]
+    },
+    drink_liquid: {
+        text: [
+            {text: 'You should drink this water it heals all wounds.'}
+        ],
+        end:[
+            {text: 'You feel a sharp pain in your gut.'},
+            {text: 'You collapse to the ground.', ending:'Died by Poison'}
+        ]
+    },
+    decline_liquid: {
+        text: [
+            {text: 'Everyone except you just drank and collapsed on the ground.'},
+            {text: `You hear laughter, Its Pranav.`},
+            
+        ],
+        end:[
+            {text: `You fight him.`},
+            {text: 'You won', ending:'Defeated Final Boss'}
         ]
     },
     
-    pranav_gets_punched: {
-        text: [
-            {text: `Sharon Punches Pranav with all he got.`, attack:1},
-            {text: `He would have gotten -0.5 damage if the game would have allowed it.`},
-        ],
-        end:[
-            {text:'Sharon Died out of heartattack.', damage:4},
-            {text: '****The End****'}
-        ]
-    },
-    pranav_laughs: {
-        text: [
-            {text: `Sharon: "Please don't kill me."`},
-            {text: `Pranav Laughs and procedes to kill Sharon.`},
-            {text:'Sharon Died with Shame.', damage:4},
-        ],
-        end:[
-            {text: '****The End****'}
-        ]
-    },
-
+   
 }
 
 

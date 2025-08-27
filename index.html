@@ -18,7 +18,7 @@
             <h1>INTO THE FALLEN KINGDOM</h1>
             <div class="btnContainer">
                 <button class="tbtn" id="newGameBtn">New Game</button>
-                <button class="tbtn">Continue</button>
+                <button class="tbtn" id="continueGameBtn">Continue</button>
                 <button class="tbtn" id="endingsBtn">Endings</button>
             </div>
 
@@ -37,27 +37,37 @@
                 <div id="dialoguebox"></div>
                 <hr class="divider">
                 <div id="hud">
-                    <div id="profileWrapper">
-                        <div class="profileContainer">
-                            <h2 class="characterName"></h2>
-                            <h2 class="health_text"></h2>
+                    <div class="characterHud">
+                        <div id="profileWrapper">
+                            <div class="profileContainer">
+                                <h2 class="characterName"></h2>
+                                <h2 class="health_text"></h2>
+                            </div>
+                            <div class="health_container">
+                                
+                            </div>
+        
                         </div>
-                        <div class="health_container">
-                            
+                        <div id="eprofileWrapper">
+                            <div class="eprofileContainer">
+                                <h2 class="echaracterName"></h2>
+                                <h2 class="ehealth_text"></h2>
+                            </div>
+                            <div class="ehealth_container">
+                                
+                            </div>
+        
                         </div>
-    
                     </div>
-                    <div id="eprofileWrapper">
-                        <div class="eprofileContainer">
-                            <h2 class="echaracterName"></h2>
-                            <h2 class="ehealth_text"></h2>
-                        </div>
-                        <div class="ehealth_container">
-                            
-                        </div>
-    
+                    <div class="gameScreenBtns">
+
+                        <button id="backBtn" class="gameBtn">☰</button>
+                        <button id="saveBtn" class="gameBtn">⎙</button>
+                        <!-- <button id="resetBtn" class="gameBtn">⟲</button> -->
                     </div>
                 </div>
+
+
             </div>
         </div>
     </div>
