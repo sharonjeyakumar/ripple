@@ -17,17 +17,18 @@ const vinylMusicName = document.getElementById('musicName');
 let currentState = 'initial_prompt';
 // localStorage.clear();
 checkSaveFile();
-
+let userInteracted = false;
 
 initialPrompt.addEventListener('click',()=>{
+    userInteracted = true;
     initialPrompt.classList.add('close');
     currentState = 'main_menu';
     setTimeout(()=>{
         vinyl.classList.add('spin');
+        playSound(sounds.mainmenu);
+        vinylHandler("Main Menu");
     },50);
     setupMainMenu();
-    playSound(sounds.mainmenu);
-    vinylHandler("Main Menu");
 });
 
 function vinylHandler(ost){
@@ -473,6 +474,7 @@ function deleteSave(){
 
 function playSound(sound) {
     try {
+         if (!userInteracted) return;
         sound.pause();
         sound.currentTime = 0;
         sound.play();
