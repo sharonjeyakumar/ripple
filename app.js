@@ -384,7 +384,7 @@ function updateHealth() {
         }
     });
 
-    if (healthText && !currentCharacter ==null) {
+    if (healthText && currentCharacter) {
         healthText.textContent = `${currentCharacter.currentHealth}/${currentCharacter.maxHealth}`;
     }
 }
@@ -398,7 +398,7 @@ function updateEHealth() {
         }
     });
 
-    if (ehealthText && !currentEnemy ==null) {
+    if (ehealthText && currentEnemy) {
         ehealthText.textContent = `${currentEnemy.currentHealth}/${currentEnemy.maxHealth}`;
     }
 }
