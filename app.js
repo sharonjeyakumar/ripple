@@ -9,6 +9,8 @@ const newGameBtn = document.getElementById('newGameBtn');
 const continueGameBtn = document.getElementById('continueGameBtn');
 const resetBtn = document.getElementById('resetBtn');
 
+// const continueBtn = document.getElementById('continueBtn');
+
 const vinyl = document.querySelector('.vinyl');
 const vinylMusicName = document.getElementById('musicName');
 
@@ -38,15 +40,13 @@ let isEndingBoxOpened = false;
 const endings = ['Died by Poison', 'Defeated Final Boss'];
 let endingsAchieved = new Set();
 
-
 function setupMainMenu() {
-
     newGameBtn.addEventListener('click',()=>{
         startNewGame();
     })
-    continueGameBtn.addEventListener('click',()=>{
-        continueGame();
-    })
+    // continueGameBtn.addEventListener('click',()=>{
+    //     continueGame();
+    // })
     // resetBtn.addEventListener('click',()=>{
     //     dialoguebox.innerHTML = '';
     // })
@@ -442,14 +442,18 @@ const backBtn = document.getElementById('backBtn');
 const saveBtn = document.getElementById('saveBtn');
 
 backBtn.addEventListener('click',()=>{
-    // saveGame();
+   goBackToMainMenu();
+})
+
+function goBackToMainMenu(){
+ // saveGame();
     currentState = 'main_menu';
     checkSaveFile();
     gameScreen.style.display = 'none';
     titleScreen.classList.remove('hidden', 'fadeOut');
     vinyl.classList.add('spin');
     // titleScreen.style.opacity = "1";
-})
+}
 saveBtn.addEventListener('click',()=>{
     saveGame();
 })
@@ -467,9 +471,12 @@ function playSound(sound) {
 // Global click handler
 function globalClickHandler(e) {
     createClickAnimation(e);
+    // if (!e.target.closest('#continueBtn')) return;
     if (!e.target.closest('#gameWrapper')) return;
     if (e.target.closest('#backBtn')) return;
     if (e.target.closest('#saveBtn')) return;
+    if (e.target.closest('#game')) return;
+
     if (e.target.closest('#resetBtn')) return;
     // Don't advance dialogue if clicked anywhere inside a choice button
     if (e.target.closest('.choiceBtn')) return;
@@ -490,6 +497,13 @@ function initGame() {
     document.body.removeEventListener('click', globalClickHandler);
     document.body.addEventListener('click', globalClickHandler);
 }
+
+// continueBtn.addEventListener('click',()=>{
+//     addDialogue();
+//     if (showChoices) {
+//         dialoguebox.scrollTo({ top: dialoguebox.scrollHeight, behavior: 'smooth' });
+//     }
+// })
 
 // Call initGame once on startup
 initGame();
@@ -574,7 +588,7 @@ function addDialogue() {
 
         if (line.color) {
             element.style.color = line.color;
-        } else if (highlightNextLine && currentDialogue === 0 && choicesShown) {
+        } else if (highlightNextLine && currentDialogue === 0) {
             element.style.color = choiceColor;
             highlightNextLine = false;
         }
@@ -673,6 +687,9 @@ function addDialogue() {
                     infoEl.classList.add('show');
                     infoEl.scrollIntoView({ behavior: 'smooth', block: 'end' });
                 });
+                setTimeout(()=>{
+                    showEndingPrompt();
+                },50)
             }, 300);  
            if (!endingsAchieved.has(line.ending)) {
                 endingsAchieved.add(line.ending);
@@ -717,6 +734,99 @@ function addDialogue() {
             addDialogue();
         }
     }
+}
+
+function showEndingPrompt(){
+    const endingPromptContanier = document.createElement('div');
+    endingPromptContanier.classList.add('endingPromptContanier');
+
+    const playAgainBtn = document.createElement('button');
+    playAgainBtn.classList.add('endingPromptBtns');
+    const goToMainMenuBtn = document.createElement('button');
+    goToMainMenuBtn.classList.add('endingPromptBtns');
+
+    const retryIcon = document.createElement('span');
+    retryIcon.textContent = '↺';
+    retryIcon.classList.add('icon');
+    retryIcon.style.marginBottom = '5px';
+
+    const backIcon = document.createElement('span');
+    backIcon.textContent = '←';
+    backIcon.classList.add('icon');
+    backIcon.style.marginBottom = '8px';
+
+    // Create text spans
+    const retryText = document.createElement('span');
+    retryText.textContent = 'Play Again';
+
+    const backText = document.createElement('span');
+    backText.textContent = 'Go to Main Menu';
+
+   function isPC() {
+    const ua = navigator.userAgent;
+    return !/Android|webOS|iPhone|iPad|iPod|BlackBerry|Windows Phone/i.test(ua);
+}
+
+// Append icons + text conditionally
+if (!isPC()) { // only append icons if NOT a PC
+    playAgainBtn.appendChild(retryIcon);
+    goToMainMenuBtn.appendChild(backIcon);
+}
+
+    playAgainBtn.appendChild(retryText);
+    goToMainMenuBtn.appendChild(backText);
+    endingPromptContanier.appendChild(playAgainBtn);
+    endingPromptContanier.appendChild(goToMainMenuBtn);
+
+    playAgainBtn.style.color = choiceBtnColor;
+    goToMainMenuBtn.style.color = choiceBtnColor;
+    dialoguebox.appendChild(endingPromptContanier);
+
+    goToMainMenuBtn.addEventListener('click',()=>{
+        goBackToMainMenu();
+    });
+    playAgainBtn.addEventListener('click',()=>{
+        currentScene = 'intro';
+        currentDialogue = 0;
+        dialogue = [];
+        choicesShown = false;
+        suppressClickSound = false;
+        actions = [];
+        visitedScenes = new Set();
+
+        highlightNextLine = false;
+        canAdvanceDialogue = true;
+        dialogueHistory = [];
+
+        currentCharacter = null;
+        currentEnemy = null;
+
+
+        Sharon.restoreFullHp();
+        Varshan.restoreFullHp();
+        Pranav.restoreFullHp();
+
+        dialoguebox.innerHTML = "";
+        healthContainer.innerHTML = "";
+        ehealthContainer.innerHTML = "";
+        characterName.textContent = "";
+        echaracterName.textContent = "";
+        healthText.textContent = "";
+        ehealthText.textContent = "";
+
+
+        dialoguebox.innerHTML = "";
+        renderScene();
+        addDialogue();
+        });
+
+    setTimeout(() => {
+        playAgainBtn.classList.add('show');
+        goToMainMenuBtn.classList.add('show');
+        endingPromptContanier.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 300);
+
+
 }
 
 function showTimedChoices(choices, timeLimit = 6000) {
@@ -989,37 +1099,42 @@ const enemydamageColor = '#005fb7ff';
 const scenes = {
     intro: {
         text: [
-            {text: 'You should drink this water it heals all wounds.'}
+            {text: `You open your eyes and to your horror.`},
+            {text: `Pranav, Son of Kratos Stands before you.`, enemySwitch:Pranav},
+            {text: `Sharon: "My name is sharon and i will handle this."`, characterSwitch:Sharon},
+            {text: `Gets punched in the face`, damage:1},
+            {text: `Varshan: "My name is Varshan and i will handle this."`,characterSwitch:Varshan},
+            {text: `Gets Kicked in the face`, damage:1},
+            {text: `Sharon: "Guess I have to handle it again"`, characterSwitch:Sharon},
         ],
         choices: [
-            {text: 'Drink the Strange liquid', next: 'drink_liquid'},
-            {text: 'Decline', next: 'decline_liquid'},
-        ]
-    },
-    drink_liquid: {
-        text: [
-            {text: 'You should drink this water it heals all wounds.'}
-        ],
-        end:[
-            {text: 'You feel a sharp pain in your gut.'},
-            {text: 'You collapse to the ground.', ending:'Died by Poison'}
-        ]
-    },
-    decline_liquid: {
-        text: [
-            {text: 'Everyone except you just drank and collapsed on the ground.'},
-            {text: `You hear laughter, Its Pranav.`},
-            
-        ],
-        end:[
-            {text: `You fight him.`},
-            {text: 'You won', ending:'Defeated Final Boss'}
+            {text: 'Punch Him or Die Trying', next: 'pranav_gets_punched'},
+            {text: 'Beg for your life', next: 'pranav_laughs'},
         ]
     },
     
-   
-}
+    pranav_gets_punched: {
+        text: [
+            {text: `Sharon Punches Pranav with all he got.`, attack:1},
+            {text: `He would have gotten -0.5 damage if the game would have allowed it.`},
+        ],
+        end:[
+            {text:'Sharon Died out of heartattack.', damage:4},
+            {text: '****The End****'}
+        ]
+    },
+    pranav_laughs: {
+        text: [
+            {text: `Sharon: "Please don't kill me."`},
+            {text: `Pranav Laughs and procedes to kill Sharon.`},
+            {text:'Sharon Died with Shame.', damage:4},
+        ],
+        end:[
+            {text: '****The End****'},
+        ]
+    },
 
+}
 
 renderScene();
 addDialogue();
