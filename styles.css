@@ -106,10 +106,32 @@ p{
     height: 100%;
     /* border: 1px solid #dbd3ca; */
     position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     z-index: 1;
-    /* opacity: 0.4; */
-    /* background-color: black; */
 }
+
+#initialPrompt::before {
+    content: '';
+    position: absolute;
+    top: 30px; /* margin from top */
+    left: 50%; /* horizontally centered */
+    width: 207px;  
+    height: 207px; 
+    background-image: url(assets/logo.svg);
+    background-size: contain;  
+    background-position: center;
+    background-repeat: no-repeat;
+    opacity: 0.04;
+    transform: translateX(-50%); /* only horizontally center */
+    z-index: -1;
+}
+#initialPrompt p{
+    font-size: 1.4rem;
+    letter-spacing: 0.05rem;
+}
+
 #initialPrompt.close{
     display: none;
 }
@@ -131,8 +153,12 @@ p{
     /* margin-top: 20px; */
     border-bottom: 1px solid #4e2c0b;
     opacity: 0; /* start hidden */
+    
+    animation-delay: 0s;
+}
+
+.tanimate{
     animation: titleFadeIn 1s ease forwards;
-    animation-delay: 0.5s;
 }
 
 
@@ -144,8 +170,12 @@ p{
     background-size: contain;
     background-repeat: no-repeat;
 
-    animation: logoFadeIn 1s ease forwards;
+    opacity: 0;
     animation-delay: 0s, 3s; 
+}
+
+.lanimate{
+    animation: logoFadeIn 1s ease forwards;
 }
 
 .btnContainer{
@@ -157,9 +187,16 @@ p{
     flex-direction: column;
     gap: 20px;
     opacity: 0;
-    animation: btnFadeIn 1s ease forwards;
-    animation-delay: 1s;
+    
+    
     pointer-events: none;
+}
+
+#mainMenuBtnContainer{
+    animation-delay: 0.6s;
+}
+.banimate{
+    animation: btnFadeIn 1s ease forwards;
 }
 .tbtn{
     background-color: #4e2c0b;
@@ -210,9 +247,13 @@ p{
     display: flex;
     justify-content: start;
     align-items: center;
-    animation: btnFadeIn 1s ease forwards;
-    animation-delay: 1.3s;
+    
+    animation-delay: 0.6s;
     opacity: 0;
+}
+
+.manimate{
+    animation: btnFadeIn 1s ease forwards;
 }
 
 

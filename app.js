@@ -1,5 +1,9 @@
 //Title Screen
 const titleScreen = document.getElementById('titleScreen');
+const subText = document.getElementById('subText');
+const logo = document.getElementById('logo');
+const musicplayer = document.getElementById('musicplayer');
+const mainMenuBtnContainer = document.getElementById('mainMenuBtnContainer');
 
 const endingsBtn = document.getElementById('endingsBtn');
 const endingBox = document.getElementById('endingBox');
@@ -14,6 +18,19 @@ const resetBtn = document.getElementById('resetBtn');
 const vinyl = document.querySelector('.vinyl');
 const vinylMusicName = document.getElementById('musicName');
 
+const sounds = {
+    mainmenu: new Audio("ost/mainmenu.wav"),
+    choice: new Audio("sfx/choicesound.mp3"),
+    choiceConfirm: new Audio("sfx/choiceconfirm.mp3"),
+    click: new Audio("sfx/click-sound3.mp3"),
+    itemFound: new Audio("sfx/item-found.mp3")
+};
+
+sounds.mainmenu.preload = "auto";   // Hint browser to preload
+sounds.mainmenu.load(); 
+
+
+
 let currentState = 'initial_prompt';
 // localStorage.clear();
 checkSaveFile();
@@ -22,6 +39,11 @@ let userInteracted = false;
 initialPrompt.addEventListener('click',()=>{
     userInteracted = true;
     initialPrompt.classList.add('close');
+    subText.classList.add('tanimate');
+    logo.classList.add('lanimate');
+    musicplayer.classList.add('manimate');
+    mainMenuBtnContainer.classList.add('banimate');
+    
     currentState = 'main_menu';
     setTimeout(()=>{
         vinyl.classList.add('spin');
@@ -43,9 +65,17 @@ let endingsAchieved = new Set();
 
 function setupMainMenu() {
     newGameBtn.addEventListener('click',()=>{
+         if (sounds.mainmenu && !sounds.mainmenu.paused) {
+        sounds.mainmenu.pause();
+        sounds.mainmenu.currentTime = 0; // reset to start
+    }
         startNewGame();
     })
     continueGameBtn.addEventListener('click',()=>{
+         if (sounds.mainmenu && !sounds.mainmenu.paused) {
+        sounds.mainmenu.pause();
+        sounds.mainmenu.currentTime = 0; // reset to start
+    }
         continueGame();
     })
     // resetBtn.addEventListener('click',()=>{
@@ -421,15 +451,6 @@ function updateECharacterSwitch(echar){
 
 
 
-
-
-const sounds = {
-    mainmenu: new Audio("ost/mainmenu.wav"),
-    choice: new Audio("sfx/choicesound.mp3"),
-    choiceConfirm: new Audio("sfx/choiceconfirm.mp3"),
-    click: new Audio("sfx/click-sound3.mp3"),
-    itemFound: new Audio("sfx/item-found.mp3")
-};
 
 
 
