@@ -28,6 +28,8 @@ const sounds = {
 
 sounds.mainmenu.preload = "auto";   // Hint browser to preload
 sounds.mainmenu.load(); 
+sounds.mainmenu.loop = true; 
+
 
 
 
