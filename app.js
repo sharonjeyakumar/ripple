@@ -26,7 +26,7 @@ initialPrompt.addEventListener('click',()=>{
         vinyl.classList.add('spin');
     },50);
     setupMainMenu();
-    // playSound(sounds.mainmenu);
+    playSound(sounds.mainmenu);
     vinylHandler("Main Menu");
 });
 
@@ -423,7 +423,7 @@ function updateECharacterSwitch(echar){
 
 
 const sounds = {
-    mainmenu: new Audio("ost/mainmenu.mp3"),
+    mainmenu: new Audio("ost/mainmenu.wav"),
     choice: new Audio("sfx/choicesound.mp3"),
     choiceConfirm: new Audio("sfx/choiceconfirm.mp3"),
     click: new Audio("sfx/click-sound3.mp3"),
@@ -463,7 +463,11 @@ saveBtn.addEventListener('click',()=>{
 })
 
 function deleteSave(){
-    localStorage.removeItem("myGameSave");
+    try{
+        localStorage.removeItem("myGameSave");
+    }catch{
+        
+    }
 
 }
 
@@ -826,6 +830,7 @@ if (!isPC()) { // only append icons if NOT a PC
 
 
         dialoguebox.innerHTML = "";
+        deleteSave();
         renderScene();
         addDialogue();
         });
