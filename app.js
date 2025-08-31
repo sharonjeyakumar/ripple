@@ -19,7 +19,7 @@ const vinyl = document.querySelector('.vinyl');
 const vinylMusicName = document.getElementById('musicName');
 
 const sounds = {
-    mainmenu: new Audio("ost/mainmenu.wav"),
+    mainmenu: new Audio("ost/mainmenu2.wav"),
     choice: new Audio("sfx/choicesound.mp3"),
     choiceConfirm: new Audio("sfx/choiceconfirm.mp3"),
     click: new Audio("sfx/click-sound3.mp3"),
